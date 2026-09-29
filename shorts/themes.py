@@ -25,7 +25,7 @@ ZODIAC = [
     Team("VIRGO", "♍", _hex("#A3E635")),
     Team("LIBRA", "♎", _hex("#FF6FB5")),
     Team("SCORPIO", "♏", _hex("#C04BFF")),
-    Team("SAGITTARIUS", "♐", _hex("#6C63FF")),
+    Team("SAGITTARIUS", "♐", _hex("#A7B1C2")),
     Team("CAPRICORN", "♑", _hex("#E0B084")),
     Team("AQUARIUS", "♒", _hex("#2F80FF")),
     Team("PISCES", "♓", _hex("#14D9C4")),
