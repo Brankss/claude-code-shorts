@@ -74,7 +74,7 @@ def produce(theme_name, seed, out, episode=None):
     meta = {
         "seed": seed, "theme": theme_name, "winner": winner.name, "episode": episode,
         "duration": TOTAL, "stats": stats,
-        "title": f"{title} \U0001F631 #shorts",
+        "title": f"{title} #shorts",
         "description": f"{theme['subtitle'].capitalize()}! Physics simulation, every hit converts.\n"
                        + " ".join(theme["hashtags"]),
     }
