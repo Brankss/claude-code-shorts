@@ -79,12 +79,17 @@ python publish.py out/daily/2026-10-01_maze.mp4             # carica e programma
 
 Per credenziali, audit e accensione dell'automazione vedi [docs/YOUTUBE_SETUP.md](docs/YOUTUBE_SETUP.md).
 
+### Canale
+
+Nome, handle, descrizione, impostazioni e playlist sono in [docs/CHANNEL_SETUP.md](docs/CHANNEL_SETUP.md). Avatar, banner e watermark stanno in `assets/channel/` e si rigenerano con `python branding.py`.
+
 ## Struttura
 
 - `shorts/base.py`: parti comuni (canvas, hook, header, loop finale)
 - `shorts/formats.py`: registro dei format (scelta del seed, preparazione del render, titoli)
 - `shorts/produce.py`: audio, encoding, metadati
 - `shorts/publishing.py`: titoli, descrizioni, hashtag, tag, impostazioni e orario di pubblicazione
+- `branding.py`: avatar, banner e watermark del canale
 - `publish.py`: upload e programmazione su YouTube (API ufficiale); `youtube_auth.py`: refresh token, da lanciare una volta
 - `shorts/contagio.py`, `contagio_render.py`, `contagio_audio.py`: Contagio
 - `shorts/maze.py`, `maze_render.py`, `maze_audio.py`: Labirinto
