@@ -15,27 +15,27 @@ def _hex(h):
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
-# 12 tinte ben distinte su sfondo scuro (ruota cromatica completa).
+# 12 tinte morbide ma distinguibili su sfondo scuro.
 ZODIAC = [
-    Team("ARIES", "♈", _hex("#FF3B3B")),
-    Team("TAURUS", "♉", _hex("#2ECC71")),
-    Team("GEMINI", "♊", _hex("#FFD60A")),
-    Team("CANCER", "♋", _hex("#5AC8FA")),
-    Team("LEO", "♌", _hex("#FF9F0A")),
-    Team("VIRGO", "♍", _hex("#A3E635")),
-    Team("LIBRA", "♎", _hex("#FF6FB5")),
-    Team("SCORPIO", "♏", _hex("#C04BFF")),
-    Team("SAGITTARIUS", "♐", _hex("#A7B1C2")),
-    Team("CAPRICORN", "♑", _hex("#E0B084")),
-    Team("AQUARIUS", "♒", _hex("#2F80FF")),
-    Team("PISCES", "♓", _hex("#14D9C4")),
+    Team("Aries", "♈", _hex("#E0625C")),
+    Team("Taurus", "♉", _hex("#7DBB7B")),
+    Team("Gemini", "♊", _hex("#EBD27A")),
+    Team("Cancer", "♋", _hex("#8FCBE6")),
+    Team("Leo", "♌", _hex("#EFA25A")),
+    Team("Virgo", "♍", _hex("#BCD57E")),
+    Team("Libra", "♎", _hex("#EA9EC0")),
+    Team("Scorpio", "♏", _hex("#A98BE0")),
+    Team("Sagittarius", "♐", _hex("#C3C8D2")),
+    Team("Capricorn", "♑", _hex("#C4A386")),
+    Team("Aquarius", "♒", _hex("#6C98E4")),
+    Team("Pisces", "♓", _hex("#6CCBBA")),
 ]
 
 THEMES = {
     "zodiac": {
         "teams": ZODIAC,
-        "title": ["WHICH ZODIAC", "SIGN WINS?"],
-        "subtitle": "COMMENT YOUR SIGN BEFORE IT ENDS",
+        "title": ["Which zodiac", "sign wins?"],
+        "subtitle": "Comment your sign before it ends",
         "hashtags": ["#zodiac", "#astrology", "#simulation", "#satisfying", "#shorts"],
     },
 }

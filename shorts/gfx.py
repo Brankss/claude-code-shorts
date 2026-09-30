@@ -1,4 +1,4 @@
-"""Helper grafici su skia: font, colori, testo."""
+"""Helper grafici su skia: font, colori, testo, easing."""
 
 from functools import lru_cache
 from pathlib import Path
@@ -13,14 +13,14 @@ def typeface(name):
     return skia.Typeface.MakeFromFile(str(FONT_DIR / name))
 
 
-def display(size):
-    """Titoli, banner, numeri."""
-    return _font("Anton-Regular.ttf", size)
+def title(size):
+    """Titoli e nomi."""
+    return _font("Montserrat-SemiBold.ttf", size)
 
 
-def label(size):
-    """Testo piccolo."""
-    return _font("Montserrat-ExtraBold.ttf", size)
+def text(size):
+    """Testo di servizio."""
+    return _font("Montserrat-Medium.ttf", size)
 
 
 def glyph(size):
@@ -48,18 +48,21 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
 
-def fit_font(maker, text, max_w, size):
-    while size > 10 and maker(size).measureText(text) > max_w:
+def fit_font(maker, s, max_w, size):
+    while size > 10 and maker(size).measureText(s) > max_w:
         size -= 2
     return maker(size)
 
 
-def draw_text(canvas, text, font, x, y, color=WHITE, alpha=1.0, align="center",
-              stroke=None, stroke_w=0.0, stroke_alpha=1.0, vcenter=False):
-    """Disegna testo; y è la baseline, o il centro se vcenter."""
-    if not text or alpha <= 0:
+def text_width(s, font, tracking=0.0):
+    return font.measureText(s) + tracking * max(0, len(s) - 1)
+
+
+def draw_text(canvas, s, font, x, y, color=WHITE, alpha=1.0, align="center", vcenter=False, tracking=0.0):
+    """Disegna testo; y è la baseline, o il centro se vcenter. tracking = spaziatura extra tra lettere."""
+    if not s or alpha <= 0:
         return
-    w = font.measureText(text)
+    w = text_width(s, font, tracking)
     if align == "center":
         x -= w / 2
     elif align == "right":
@@ -67,18 +70,13 @@ def draw_text(canvas, text, font, x, y, color=WHITE, alpha=1.0, align="center",
     if vcenter:
         m = font.getMetrics()
         y -= (m.fAscent + m.fDescent) / 2
-    blob = skia.TextBlob.MakeFromString(text, font)
-    if stroke is not None and stroke_w > 0:
-        p = skia.Paint(AntiAlias=True, Color=rgba(stroke, alpha * stroke_alpha),
-                       Style=skia.Paint.kStroke_Style, StrokeWidth=stroke_w,
-                       StrokeJoin=skia.Paint.kRound_Join)
-        canvas.drawTextBlob(blob, x, y, p)
-    canvas.drawTextBlob(blob, x, y, skia.Paint(AntiAlias=True, Color=rgba(color, alpha)))
-
-
-def ease_out_back(k, s=1.7):
-    k = max(0.0, min(1.0, k)) - 1
-    return 1 + (s + 1) * k ** 3 + s * k ** 2
+    paint = skia.Paint(AntiAlias=True, Color=rgba(color, alpha))
+    if not tracking:
+        canvas.drawTextBlob(skia.TextBlob.MakeFromString(s, font), x, y, paint)
+        return
+    for ch in s:
+        canvas.drawTextBlob(skia.TextBlob.MakeFromString(ch, font), x, y, paint)
+        x += font.measureText(ch) + tracking
 
 
 def ease_in_out(k):
@@ -89,3 +87,14 @@ def ease_in_out(k):
 def ease_out(k):
     k = max(0.0, min(1.0, k))
     return 1 - (1 - k) ** 3
+
+
+def fade(a, fade_in, hold, fade_out):
+    """Opacità di un elemento che compare, resta e sparisce (a = secondi da quando compare)."""
+    if a < 0 or a > fade_in + hold + fade_out:
+        return 0.0
+    if a < fade_in:
+        return ease_in_out(a / fade_in)
+    if a < fade_in + hold:
+        return 1.0
+    return 1.0 - ease_in_out((a - fade_in - hold) / fade_out)

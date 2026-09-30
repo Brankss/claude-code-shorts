@@ -10,14 +10,19 @@ Cosa succede nei ~40 secondi:
 
 | Tempo | Evento |
 |---|---|
-| 0s | Hook: titolo gigante sopra l'arena già in movimento |
-| 8.5s | **SPEED UP!** le palline accelerano |
-| 15s | **GRAVITY ON** |
-| 20s | **GRAVITY FLIP!** |
-| 24.5s | **THE WALL BREAKS!** si apre un varco rotante: chi esce è fuori |
-| finale | slow-mo + zoom sul colpo decisivo, festa del vincitore, dissolvenza sul primo frame per il loop |
+| 0s | Hook: la domanda grande sopra l'arena già in movimento |
+| 8.5s | *Speed up*: le palline accelerano |
+| 15s | *Gravity on* |
+| 20s | *Gravity flipped* |
+| 24.5s | *The wall opens*: si apre un varco rotante, chi esce è fuori |
+| finale | slow-mo e zoom leggero sul colpo decisivo, "X wins", dissolvenza sul primo frame per il loop |
 
-Durante tutta la partita: barra delle percentuali in tempo reale, leader, toast "IS OUT!" / "LAST BALL!", particelle e onde d'urto a ogni conversione.
+### Stile
+
+Minimal e rilassante: niente flash, scossoni, coriandoli o banner urlati.
+
+- **Grafica**: colori piatti e morbidi, anello sottile, barra sottile a segmenti, didascalie piccole che entrano e escono in dissolvenza. A ogni conversione la pallina sfuma nel nuovo colore e parte un anello sottile.
+- **Audio**: pad ambient, una nota tipo kalimba a ogni conversione (ogni segno ha la sua nota della scala pentatonica), campane morbide per eliminazioni ed eventi. La coda del riverbero rientra all'inizio, così anche l'audio fa il loop senza tagli.
 
 ### Drama score
 
@@ -47,13 +52,22 @@ python make_contagio.py --seed 149 --stills 0.1,6,25,34 --out out/preview
 
 Per rigenerare lo stesso identico video basta rilanciarlo con `--seed N`.
 
+Video del giorno, pensato per un'automazione giornaliera:
+
+```bash
+python daily.py                     # oggi, in out/daily/
+python daily.py --date 2026-10-02   # un giorno specifico, sempre identico
+```
+
+Il numero di episodio e il vincitore dipendono solo dalla data: in ogni ciclo di 12 giorni ogni segno vince una volta, in ordine rimescolato.
+
 ## Struttura
 
 - `shorts/contagio.py`: fisica, regole, eventi, drama score, ricerca dei seed
-- `shorts/contagio_render.py`: timeline (slow-mo), arena, HUD, banner, festa finale
+- `shorts/contagio_render.py`: timeline (slow-mo), arena, HUD, didascalie, schermata finale
 - `shorts/contagio_audio.py`: colonna sonora sincronizzata con gli eventi
-- `shorts/audio.py`: sintetizzatori (kick, hat, pluck, riser, boom…) e mixer
+- `shorts/audio.py`: sintetizzatori (pad, kalimba, campane) e mixer con riverbero
 - `shorts/gfx.py`: helper skia (font, testo, easing)
 - `shorts/themes.py`: squadre (nome, glifo, colore). Per un nuovo tema basta aggiungerlo qui.
 
-Font: Anton e Montserrat (OFL), DejaVu Sans (licenza in `assets/fonts`).
+Font: Montserrat (OFL) e DejaVu Sans (licenze in `assets/fonts`).
