@@ -49,6 +49,41 @@ def encode(renderer, tl, wav, out):
         raise SystemExit("ffmpeg ha fallito")
 
 
+def produce(theme_name, seed, out, episode=None):
+    """Renderizza il video di un seed e scrive accanto .json (metadati) e .txt (titolo e descrizione)."""
+    theme = THEMES[theme_name]
+    rec = contagio.simulate(seed, len(theme["teams"]))
+    stats = contagio.drama_score(rec)
+    if stats is None:
+        raise SystemExit(f"Il seed {seed} finisce fuori finestra (t_end={rec.t_end})")
+    tl = Timeline(rec, theme)
+    renderer = Renderer(tl, theme)
+    winner = theme["teams"][rec.winner]
+    print(f"seed {seed}: vince {winner.name} a {rec.t_end:.2f}s (video {tl.vt_win:.2f}s) {stats}")
+
+    out = Path(out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    wav = out.with_suffix(".wav")
+    audio.write_wav(wav, contagio_audio.build(tl))
+    encode(renderer, tl, wav, out)
+    wav.unlink()
+
+    title = " ".join(theme["title"]).title()
+    if episode:
+        title += f" #{episode}"
+    meta = {
+        "seed": seed, "theme": theme_name, "winner": winner.name, "episode": episode,
+        "duration": TOTAL, "stats": stats,
+        "title": f"{title} \U0001F631 #shorts",
+        "description": f"{theme['subtitle'].capitalize()}! Physics simulation, every hit converts.\n"
+                       + " ".join(theme["hashtags"]),
+    }
+    out.with_suffix(".json").write_text(json.dumps(meta, indent=2, ensure_ascii=False))
+    out.with_suffix(".txt").write_text(f"{meta['title']}\n\n{meta['description']}\n")
+    print(f"fatto: {out}")
+    return meta
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--theme", default="zodiac", choices=sorted(THEMES))
@@ -63,39 +98,19 @@ def main():
     n_teams = len(theme["teams"])
     seed = args.seed if args.seed is not None else pick_seed(n_teams, args.seed_start, args.seeds)
 
-    rec = contagio.simulate(seed, n_teams)
-    stats = contagio.drama_score(rec)
-    if stats is None:
-        raise SystemExit(f"Il seed {seed} finisce fuori finestra (t_end={rec.t_end})")
-    tl = Timeline(rec, theme)
-    renderer = Renderer(tl, theme)
-    winner = theme["teams"][rec.winner]
-    print(f"seed {seed}: vince {winner.name} a {rec.t_end:.2f}s (video {tl.vt_win:.2f}s) {stats}")
-
-    out = Path(args.out)
-    if args.stills:
-        out.mkdir(parents=True, exist_ok=True)
-        for s in args.stills.split(","):
-            f = min(int(float(s) * FPS), tl.n_frames - 1)
-            buf = renderer.render(f)
-            skia.Image.fromarray(buf.copy()).save(str(out / f"frame_{float(s):06.2f}.png"), skia.kPNG)
+    if not args.stills:
+        produce(args.theme, seed, args.out)
         return
 
-    out.parent.mkdir(parents=True, exist_ok=True)
-    wav = out.with_suffix(".wav")
-    audio.write_wav(wav, contagio_audio.build(tl))
-    encode(renderer, tl, wav, out)
-    wav.unlink()
-
-    title = " ".join(theme["title"]).title().replace("Wins?", "Wins?")
-    meta = {
-        "seed": seed, "theme": args.theme, "winner": winner.name, "duration": TOTAL, "stats": stats,
-        "title": f"{title} \U0001F631 #shorts",
-        "description": f"{theme['subtitle'].capitalize()}! Physics simulation, every hit converts.\n"
-                       + " ".join(theme["hashtags"]),
-    }
-    out.with_suffix(".json").write_text(json.dumps(meta, indent=2, ensure_ascii=False))
-    print(f"fatto: {out}")
+    rec = contagio.simulate(seed, n_teams)
+    tl = Timeline(rec, theme)
+    renderer = Renderer(tl, theme)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    for s in args.stills.split(","):
+        f = min(int(float(s) * FPS), tl.n_frames - 1)
+        buf = renderer.render(f)
+        skia.Image.fromarray(buf.copy()).save(str(out / f"frame_{float(s):06.2f}.png"), skia.kPNG)
 
 
 if __name__ == "__main__":
