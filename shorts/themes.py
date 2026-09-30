@@ -44,6 +44,5 @@ THEMES = {
         "teams": ZODIAC,
         "title": ["Which zodiac", "sign wins?"],
         "subtitle": "Comment your sign before it ends",
-        "hashtags": ["#zodiac", "#astrology", "#simulation", "#satisfying", "#shorts"],
     },
 }

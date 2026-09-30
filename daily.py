@@ -12,6 +12,7 @@ Niente stato da salvare: tutto deriva dalla data.
 import argparse
 import datetime as dt
 
+from shorts import publishing
 from shorts.formats import CYCLE, FORMATS
 from shorts.produce import produce
 
@@ -35,7 +36,8 @@ def main():
     fmt = FORMATS[name]
     seed = fmt.pick(episode)
     job = fmt.prepare(seed, episode)
-    print(f"{args.date}: {name} #{episode}, seed {seed}")
+    job.meta.update(publishing.build(name, episode, args.date))
+    print(f"{args.date}: {name} #{episode}, seed {seed}, pubblicazione {job.meta['publish_at']}")
     produce(job, f"{args.out_dir}/{args.date}_{name}.mp4")
 
 

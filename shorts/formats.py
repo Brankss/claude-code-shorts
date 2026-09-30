@@ -5,7 +5,7 @@ from typing import Callable
 
 import numpy as np
 
-from . import contagio, maze, sync
+from . import contagio, maze, publishing, sync
 from .themes import COLORS4, THEMES
 
 
@@ -23,13 +23,10 @@ def rotating(episode, n):
     return int(np.random.default_rng(cycle).permutation(n)[idx])
 
 
-def _meta(name, seed, episode, title, subtitle, hashtags, winner=None, stats=None):
-    t = title + (f" #{episode}" if episode else "")
-    return {
-        "format": name, "seed": seed, "episode": episode, "winner": winner, "stats": stats,
-        "title": f"{t} #shorts",
-        "description": f"{subtitle}.\n" + " ".join(hashtags),
-    }
+def _meta(name, seed, episode, winner=None, stats=None):
+    """Metadati tecnici; titolo, descrizione e impostazioni li aggiunge publishing.build."""
+    return {"format": name, "seed": seed, "episode": episode, "winner": winner, "stats": stats,
+            **publishing.build(name, episode)}
 
 
 class Contagio:
@@ -65,15 +62,13 @@ class Contagio:
         r = Renderer(tl, theme)
         winner = theme["teams"][rec.winner].name
         return Job(r.n_frames, r.render, lambda: contagio_audio.build(tl),
-                   _meta(self.name, seed, episode, "Which Zodiac Sign Wins?", theme["subtitle"],
-                         theme["hashtags"], winner, stats))
+                   _meta(self.name, seed, episode, winner, stats))
 
 
 class Maze:
     name = "maze"
     title_lines = ["Which color reaches", "the center first?"]
     subtitle = "Pick one before it starts"
-    hashtags = ["#maze", "#satisfying", "#simulation", "#relaxing", "#shorts"]
 
     def pick(self, episode):
         target = rotating(episode, len(COLORS4))
@@ -92,15 +87,13 @@ class Maze:
         tl = Timeline(m, COLORS4)
         r = Renderer(tl, self.title_lines, self.subtitle)
         return Job(r.n_frames, r.render, lambda: maze_audio.build(tl),
-                   _meta(self.name, seed, episode, "Which Color Reaches The Center First?", self.subtitle,
-                         self.hashtags, COLORS4[m.winner].name, maze.drama_score(m)))
+                   _meta(self.name, seed, episode, COLORS4[m.winner].name, maze.drama_score(m)))
 
 
 class Sync:
     name = "sync"
     title_lines = ["Wait for them", "to sync again"]
     subtitle = "Every hit plays a note"
-    hashtags = ["#satisfying", "#polyrhythm", "#relaxing", "#asmr", "#shorts"]
 
     def pick(self, episode):
         return episode
@@ -109,8 +102,7 @@ class Sync:
         p = sync.params(seed)
         r = sync.Renderer(p, self.title_lines, self.subtitle)
         return Job(r.n_frames, r.render, lambda: sync.build_audio(p),
-                   _meta(self.name, seed, episode, "Wait For Them To Sync Again", self.subtitle,
-                         self.hashtags, stats=p.__dict__))
+                   _meta(self.name, seed, episode, stats=p.__dict__))
 
 
 FORMATS = {f.name: f for f in (Contagio(), Maze(), Sync())}

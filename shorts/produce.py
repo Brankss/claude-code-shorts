@@ -8,7 +8,7 @@ from pathlib import Path
 import imageio_ffmpeg
 import skia
 
-from . import audio
+from . import audio, publishing
 from .base import FPS, H, W
 
 
@@ -32,7 +32,7 @@ def encode(job, wav, out):
 
 
 def produce(job, out):
-    """Scrive out (.mp4), più .json (metadati) e .txt (titolo e descrizione da incollare)."""
+    """Scrive out (.mp4), più .json (metadati) e .txt (scheda di pubblicazione da copiare)."""
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     wav = out.with_suffix(".wav")
@@ -40,7 +40,7 @@ def produce(job, out):
     encode(job, wav, out)
     wav.unlink()
     out.with_suffix(".json").write_text(json.dumps(job.meta, indent=2, ensure_ascii=False, default=str))
-    out.with_suffix(".txt").write_text(f"{job.meta['title']}\n\n{job.meta['description']}\n")
+    out.with_suffix(".txt").write_text(publishing.sheet(job.meta))
     print(f"fatto: {out}")
 
 
