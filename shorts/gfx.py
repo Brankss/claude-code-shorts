@@ -46,6 +46,8 @@ def mix(c1, c2, k):
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+BG = (17, 17, 21)
+INK = (236, 236, 240)
 
 
 def fit_font(maker, s, max_w, size):

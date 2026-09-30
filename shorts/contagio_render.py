@@ -10,18 +10,11 @@ import numpy as np
 import skia
 
 from . import gfx
-from .contagio import ARENA_R, BALL_R, CENTER, ESCAPING, GONE, H, W
-from .gfx import BLACK, draw_text, ease_in_out, ease_out, fade, mix, rgba
+from .base import FPS, TOTAL, W, WORLD_TOP, BaseRenderer
+from .contagio import ARENA_R, BALL_R, CENTER, ESCAPING, GONE, H
+from .gfx import BG, BLACK, INK, draw_text, ease_in_out, ease_out, fade, mix, rgba
 
-FPS = 60
-TOTAL = 40.0
 PRE, POST, SLOW, CELEB_RATE = 0.55, 0.25, 0.3, 0.7
-LOOP_FADE = 0.45
-HOOK_END = 1.8
-WORLD_TOP = 404
-
-BG = (17, 17, 21)
-INK = (236, 236, 240)
 
 EVENT_TEXT = {
     "speed": "SPEED UP",
@@ -115,15 +108,12 @@ class Timeline:
         return min(int(self.sim_t[f] / self.rec.dt), len(self.rec.counts) - 1)
 
 
-class Renderer:
+class Renderer(BaseRenderer):
     def __init__(self, tl, theme):
+        super().__init__(theme["title"], theme["subtitle"])
         self.tl = tl
         self.rec = tl.rec
-        self.theme = theme
         self.teams = theme["teams"]
-        self.buf = np.zeros((H, W, 4), np.uint8)
-        self.surface = skia.Surface(self.buf)
-        self.frame0 = None
         # Glifi pre-centrati per ogni squadra.
         gf = gfx.glyph(BALL_R * 1.05)
         self.glyphs = []
@@ -132,13 +122,9 @@ class Renderer:
             b = blob.bounds()
             self.glyphs.append((blob, -(b.left() + b.right()) / 2, -(b.top() + b.bottom()) / 2))
 
-    def render(self, f):
+    def draw(self, c, f, vt):
         tl, rec = self.tl, self.rec
-        c = self.surface.getCanvas()
-        vt = f / FPS
         s = tl.sim_t[f]
-        c.clear(rgba(BG))
-
         if vt >= tl.vt_win:
             k = ease_in_out((vt - tl.vt_win) / 1.2)
             col = self.teams[rec.winner].color
@@ -156,14 +142,6 @@ class Renderer:
         self._hud(c, f, vt)
         if vt >= tl.vt_win:
             self._winner(c, vt - tl.vt_win)
-        self._hook(c, vt)
-
-        if self.frame0 is not None and vt > TOTAL - LOOP_FADE:
-            k = ease_in_out((vt - (TOTAL - LOOP_FADE)) / LOOP_FADE)
-            c.drawImage(self.frame0, 0, 0, skia.SamplingOptions(), skia.Paint(Alphaf=k))
-        if f == 0:
-            self.frame0 = skia.Image.fromarray(self.buf.copy())
-        return self.buf
 
     # ---------- mondo ----------
 
@@ -258,15 +236,12 @@ class Renderer:
 
     def _hud(self, c, f, vt):
         tl, rec = self.tl, self.rec
-        k = ease_in_out((vt - (HOOK_END - 0.4)) / 0.4)
+        k = self.header(c, vt)
         if k <= 0:
             return
         counts = rec.counts[tl.step(f)]
         won = vt >= tl.vt_win
         n_t = len(self.teams)
-
-        draw_text(c, " ".join(self.theme["title"]), gfx.title(50), W / 2, 196, color=INK, alpha=k)
-        draw_text(c, self.theme["subtitle"], gfx.text(28), W / 2, 246, color=INK, alpha=0.5 * k)
 
         # Barra sottile a segmenti.
         bx, by, bw, bh, gap = 90.0, 292.0, 900.0, 8.0, 3.0
@@ -337,14 +312,3 @@ class Renderer:
         k, dy = item(1.4)
         if k > 0:
             draw_text(c, "Comment who plays next", gfx.text(30), W / 2, 1380 + dy, color=INK, alpha=0.55 * k)
-
-    def _hook(self, c, vt):
-        """Primi frame: la domanda grande nello spazio sopra l'arena, poi dissolve nell'header."""
-        if vt >= HOOK_END:
-            return
-        al = 1 - ease_in_out((vt - (HOOK_END - 0.8)) / 0.4)
-        l1, l2 = self.theme["title"]
-        f = gfx.title(92)
-        draw_text(c, l1, f, W / 2, 262, color=INK, alpha=al)
-        draw_text(c, l2, f, W / 2, 372, color=INK, alpha=al)
-        draw_text(c, self.theme["subtitle"], gfx.text(32), W / 2, 450, color=INK, alpha=0.6 * al)

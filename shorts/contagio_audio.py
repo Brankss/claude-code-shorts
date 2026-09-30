@@ -2,7 +2,7 @@
 
 from . import audio as A
 from .contagio import W
-from .contagio_render import TOTAL
+from .base import TOTAL
 
 # Accordi ambient (4s ciascuno): Am9, Fmaj7, Cmaj7, G6.
 CHORDS = [[45, 57, 60, 64, 71], [41, 57, 60, 64, 69], [48, 55, 59, 64, 67], [43, 55, 59, 62, 64]]

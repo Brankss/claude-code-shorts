@@ -1,12 +1,15 @@
 # claude-code-shorts
 
-Generatore di YouTube Shorts faceless fatti interamente in codice: simulazione fisica, motion graphics e audio procedurale. Niente AI video, niente stock.
+Generatore di YouTube Shorts faceless fatti interamente in codice: simulazione, motion graphics e audio procedurale. Niente AI video, niente stock.
 
-## Format 1: Contagio
+Genere: relax / ipnotico. Tre format completamente diversi che si alternano ogni giorno, tutti nello stesso stile minimal:
+- **Grafica**: colori piatti e morbidi, linee sottili, testo sobrio, niente flash o scossoni.
+- **Audio**: pad ambient più note tipo kalimba o campane legate a quello che succede a schermo.
+- **Durata e loop**: 40 secondi, con dissolvenza finale sul primo frame così il loop non ha stacchi.
 
-12 squadre (per ora i segni zodiacali), 4 palline ciascuna, dentro un'arena circolare. Quando due palline di squadre diverse si scontrano, una converte l'altra. Vince l'ultima squadra rimasta.
+## Format 1: Contagio (`contagio`)
 
-Cosa succede nei ~40 secondi:
+12 squadre (i segni zodiacali), 4 palline ciascuna, dentro un'arena circolare. Quando due palline di squadre diverse si scontrano, una converte l'altra. Vince l'ultima squadra rimasta.
 
 | Tempo | Evento |
 |---|---|
@@ -15,59 +18,66 @@ Cosa succede nei ~40 secondi:
 | 15s | *Gravity on* |
 | 20s | *Gravity flipped* |
 | 24.5s | *The wall opens*: si apre un varco rotante, chi esce è fuori |
-| finale | slow-mo e zoom leggero sul colpo decisivo, "X wins", dissolvenza sul primo frame per il loop |
+| finale | slow-mo e zoom leggero sul colpo decisivo, "X wins" |
 
-### Stile
-
-Minimal e rilassante: niente flash, scossoni, coriandoli o banner urlati.
-
-- **Grafica**: colori piatti e morbidi, anello sottile, barra sottile a segmenti, didascalie piccole che entrano e escono in dissolvenza. A ogni conversione la pallina sfuma nel nuovo colore e parte un anello sottile.
-- **Audio**: pad ambient, una nota tipo kalimba a ogni conversione (ogni segno ha la sua nota della scala pentatonica), campane morbide per eliminazioni ed eventi. La coda del riverbero rientra all'inizio, così anche l'audio fa il loop senza tagli.
-
-### Drama score
-
-Il generatore simula centinaia di partite senza renderizzarle e tiene la più drammatica, cioè quella con:
+Il generatore simula centinaia di partite senza renderizzarle e tiene la più drammatica (**drama score**), cioè quella con:
 - tanti cambi di leader
-- vincitore che a un certo punto era ridotto a 1-2 palline (rimonta)
-- vincitore che non era tra i primi a metà partita
-- duello finale né troppo corto né troppo lungo
-- niente tempi morti tra un'eliminazione e l'altra
+- una rimonta di chi era ridotto a 1-2 palline
+- un duello finale né troppo corto né troppo lungo
 
-Tra i seed viene scelta la partita più bella, non il vincitore: nei titoli e nelle descrizioni non va scritto "100% random".
+Tra i seed si sceglie la partita, non il vincitore: nei titoli non va scritto "100% random".
+
+## Format 2: Labirinto (`maze`)
+
+Quattro liquidi colorati partono dagli angoli di un labirinto 21×21 e scorrono nei corridoi. Vince il primo che arriva al centro.
+- Ogni cella ha un tempo di attraversamento casuale, quindi la gara non si risolve a occhio.
+- Chi arriva prima in una cella la occupa e blocca gli altri: un colore può restare intrappolato.
+- Durante la gara: barrette di progresso, chi è più vicino e quanti passi mancano, avvisi *is trapped* e *final stretch*.
+- Alla fine si disegna il percorso del vincitore.
+
+Il drama score premia gli arrivi al fotofinish, i cambi di chi è più vicino e un colore intrappolato.
+
+## Format 3: Sync (`sync`)
+
+Pallini su orbite concentriche a velocità diverse (polyrhythm). Ogni colpo suona una nota.
+- Partono allineati, si sparpagliano in pattern ipnotici e si riallineano esattamente alla fine.
+- Un countdown "Next sync in 0:12" tiene lo spettatore fino al payoff.
+- Due varianti si alternano: **arcs** (vanno e vengono su semicerchi, con riflesso) e **rings** (girano in tondo).
+- Ogni episodio cambia numero di orbite, velocità, palette e scala musicale.
 
 ## Uso
 
 ```bash
 pip install -r requirements.txt   # su Linux serve anche libegl1 per skia
-python make_contagio.py --theme zodiac --seeds 1000 --out out/zodiac_001.mp4
+python make.py --format maze --episode 1 --out out/maze_001.mp4
+python make.py --format contagio --seed 405 --out out/zodiac.mp4          # seed già noto, salta la ricerca
+python make.py --format sync --episode 3 --stills 0.5,20,39 --out out/prev # solo frame PNG per controllare
 ```
 
-Il comando produce `out/zodiac_001.mp4` (1080×1920, 60fps, H.264 + AAC) e `out/zodiac_001.json` con il seed, le statistiche e un titolo e una descrizione suggeriti.
+Ogni video produce `.mp4` (1080×1920, 60fps, H.264 + AAC, sotto i 30 MB), `.json` con metadati e statistiche e `.txt` con titolo e descrizione da incollare.
 
-Per controllare singoli frame senza renderizzare tutto il video:
-
-```bash
-python make_contagio.py --seed 149 --stills 0.1,6,25,34 --out out/preview
-```
-
-Per rigenerare lo stesso identico video basta rilanciarlo con `--seed N`.
-
-Video del giorno, pensato per un'automazione giornaliera:
+### Video del giorno
 
 ```bash
 python daily.py                     # oggi, in out/daily/
 python daily.py --date 2026-10-02   # un giorno specifico, sempre identico
 ```
 
-Il numero di episodio e il vincitore dipendono solo dalla data: in ogni ciclo di 12 giorni ogni segno vince una volta, in ordine rimescolato.
+Tutto dipende solo dalla data, partendo dal 30/09/2026:
+- **Rotazione dei format**: Contagio, Labirinto, Sync, e poi da capo.
+- **Episodi**: ogni format ha la sua numerazione.
+- **Vincitori**: nei format con vincitore, ogni squadra vince una volta per ciclo, in ordine rimescolato.
 
 ## Struttura
 
-- `shorts/contagio.py`: fisica, regole, eventi, drama score, ricerca dei seed
-- `shorts/contagio_render.py`: timeline (slow-mo), arena, HUD, didascalie, schermata finale
-- `shorts/contagio_audio.py`: colonna sonora sincronizzata con gli eventi
+- `shorts/base.py`: parti comuni (canvas, hook, header, loop finale)
+- `shorts/formats.py`: registro dei format (scelta del seed, preparazione del render, titoli)
+- `shorts/produce.py`: audio, encoding, metadati
+- `shorts/contagio.py`, `contagio_render.py`, `contagio_audio.py`: Contagio
+- `shorts/maze.py`, `maze_render.py`, `maze_audio.py`: Labirinto
+- `shorts/sync.py`: Sync (parametri, render, audio)
 - `shorts/audio.py`: sintetizzatori (pad, kalimba, campane) e mixer con riverbero
-- `shorts/gfx.py`: helper skia (font, testo, easing)
-- `shorts/themes.py`: squadre (nome, glifo, colore). Per un nuovo tema basta aggiungerlo qui.
+- `shorts/gfx.py`: helper skia (font, testo, colori, easing)
+- `shorts/themes.py`: squadre (nome, glifo, colore)
 
 Font: Montserrat (OFL) e DejaVu Sans (licenze in `assets/fonts`).

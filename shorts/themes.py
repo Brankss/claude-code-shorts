@@ -31,6 +31,14 @@ ZODIAC = [
     Team("Pisces", "♓", _hex("#6CCBBA")),
 ]
 
+# Quattro colori per i format a 4 squadre (Labirinto).
+COLORS4 = [
+    Team("Red", "", _hex("#E0625C")),
+    Team("Yellow", "", _hex("#EBD27A")),
+    Team("Blue", "", _hex("#6C98E4")),
+    Team("Green", "", _hex("#7DBB7B")),
+]
+
 THEMES = {
     "zodiac": {
         "teams": ZODIAC,
