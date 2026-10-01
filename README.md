@@ -79,6 +79,10 @@ python publish.py out/daily/2026-10-01_maze.mp4             # carica e programma
 
 Per credenziali, audit e accensione dell'automazione vedi [docs/YOUTUBE_SETUP.md](docs/YOUTUBE_SETUP.md).
 
+### Su Hermes Agent
+
+Per far girare tutto ogni giorno su una VM con Hermes Agent, con consegna su Discord e zero token, vedi [hermes/README.md](hermes/README.md).
+
 ### Canale
 
 Nome, handle, descrizione, impostazioni e playlist sono in [docs/CHANNEL_SETUP.md](docs/CHANNEL_SETUP.md). Avatar, banner e watermark stanno in `assets/channel/` e si rigenerano con `python branding.py`.

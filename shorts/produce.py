@@ -51,3 +51,23 @@ def stills(job, times, out_dir):
     for s in times:
         f = min(int(s * FPS), job.n_frames - 1)
         skia.Image.fromarray(job.render(f).copy()).save(str(out_dir / f"frame_{s:06.2f}.png"), skia.kPNG)
+
+
+def small_copy(src, dst, max_mb=9.5):
+    """Copia leggera per chat come Discord (limite 10 MB sui server senza boost).
+
+    Se il video sta già sotto il limite lo copia così com'è; altrimenti lo ricomprime
+    in 1080p con un tetto di bitrate (le grafiche piatte reggono benissimo).
+    """
+    import shutil
+    src, dst = Path(src), Path(dst)
+    if src.stat().st_size <= max_mb * 1024 * 1024:
+        shutil.copyfile(src, dst)
+        return dst
+    ff = imageio_ffmpeg.get_ffmpeg_exe()
+    cmd = [ff, "-y", "-loglevel", "error", "-i", str(src),
+           "-c:v", "libx264", "-preset", "medium", "-crf", "23", "-maxrate", "1.7M", "-bufsize", "3.4M",
+           "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(dst)]
+    if subprocess.run(cmd).returncode != 0:
+        raise SystemExit("ffmpeg ha fallito (copia leggera)")
+    return dst

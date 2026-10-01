@@ -287,7 +287,8 @@ def _eval(args):
     return seed, (rec.t_end, drama_score(rec))
 
 
-def search(n_teams, seeds, workers=4):
+def search(n_teams, seeds, workers=None):
+    import os
     from multiprocessing import Pool
-    with Pool(workers) as pool:
+    with Pool(workers or os.cpu_count() or 1) as pool:
         return pool.map(_eval, [(s, n_teams) for s in seeds], chunksize=4)
