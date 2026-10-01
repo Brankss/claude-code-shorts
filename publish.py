@@ -2,6 +2,7 @@
 
     python publish.py out/daily/2026-10-01_maze.mp4             # carica e programma
     python publish.py out/daily/2026-10-01_maze.mp4 --dry-run   # mostra cosa invierebbe, senza caricare
+    python publish.py out/daily/2026-10-01_maze.mp4 --test      # carica privato e non programmato (prova)
 
 Credenziali (variabili d'ambiente, vedi docs/YOUTUBE_SETUP.md):
     YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN
@@ -41,8 +42,9 @@ def access_token():
 
 
 def body(meta, publish_at):
+    """publish_at=None: resta privato e non esce mai da solo (per le prove)."""
     s = meta["settings"]
-    return {
+    payload = {
         "snippet": {
             "title": meta["title"][:100],
             "description": meta["description"],
@@ -53,7 +55,6 @@ def body(meta, publish_at):
         "status": {
             # Un video programmato si carica privato e diventa pubblico da solo a publishAt.
             "privacyStatus": "private",
-            "publishAt": publish_at.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
             "selfDeclaredMadeForKids": s["made_for_kids"],
             "containsSyntheticMedia": s["synthetic_media"],
             "license": s["license"],
@@ -61,6 +62,11 @@ def body(meta, publish_at):
             "publicStatsViewable": s["public_stats"],
         },
     }
+    if publish_at is None:
+        payload["snippet"]["title"] = ("[TEST] " + meta["title"])[:100]
+    else:
+        payload["status"]["publishAt"] = publish_at.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    return payload
 
 
 def upload(video, payload, token, notify):
@@ -83,21 +89,29 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("video", type=Path)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--test", action="store_true",
+                    help="carica come privato senza programmarlo: serve a vedere se il progetto è sbloccato")
     args = ap.parse_args()
 
     meta_path = args.video.with_suffix(".json")
     meta = json.loads(meta_path.read_text())
     date = dt.date.fromisoformat(meta["date"]) if meta.get("date") else dt.date.today()
-    when = publishing.publish_at(date)
+    when = None if args.test else publishing.publish_at(date)
     payload = body(meta, when)
 
     if args.dry_run:
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         return
     try:
-        res = upload(args.video, payload, access_token(), meta["settings"]["notify_subscribers"])
+        notify = meta["settings"]["notify_subscribers"] and not args.test
+        res = upload(args.video, payload, access_token(), notify)
     except urllib.error.HTTPError as e:
         sys.exit(f"Richiesta a Google fallita ({e.code}): {e.read().decode(errors='replace')}")
+    if args.test:
+        print(f"caricato in prova (privato): https://studio.youtube.com/video/{res['id']}/edit\n"
+              "Aprilo in YouTube Studio: se la visibilità dice 'Bloccato' serve l'audit, "
+              "se puoi cambiarla in Pubblico il progetto è già sbloccato.")
+        return
     meta["youtube"] = {"id": res["id"], "url": f"https://youtube.com/shorts/{res['id']}",
                        "publish_at": when.isoformat()}
     meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False, default=str))

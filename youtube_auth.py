@@ -1,6 +1,7 @@
 """Da lanciare UNA volta sul tuo computer: ti fa accedere con Google e stampa il refresh token per YT_REFRESH_TOKEN.
 
-    python youtube_auth.py --client-id XXX --client-secret YYY
+    python youtube_auth.py --client-id XXX --client-secret YYY                # client "App desktop"
+    python youtube_auth.py --client-id XXX --client-secret YYY --port 8765    # client "Applicazione web"
 
 Usa solo la libreria standard. Accedi con l'account Google che gestisce il canale
 (se il canale è un brand account, sceglilo quando Google te lo chiede).
@@ -17,22 +18,31 @@ import webbrowser
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
-SCOPE = "https://www.googleapis.com/auth/youtube.upload"
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+# Lettura di statistiche e video, per i report futuri (YouTube Analytics API).
+ANALYTICS_SCOPES = ["https://www.googleapis.com/auth/youtube.readonly",
+                    "https://www.googleapis.com/auth/yt-analytics.readonly"]
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--client-id", required=True)
     ap.add_argument("--client-secret", required=True)
+    ap.add_argument("--port", type=int, default=0,
+                    help="porta fissa, serve con i client 'Applicazione web' (redirect http://127.0.0.1:PORTA)")
+    ap.add_argument("--no-analytics", action="store_true", help="chiedi solo il permesso di caricare video")
     args = ap.parse_args()
 
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
+    port = args.port
+    if not port:
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
     redirect = f"http://127.0.0.1:{port}"
+    scopes = SCOPES + ([] if args.no_analytics else ANALYTICS_SCOPES)
     url = AUTH_URL + "?" + urllib.parse.urlencode({
         "client_id": args.client_id, "redirect_uri": redirect, "response_type": "code",
-        "scope": SCOPE, "access_type": "offline", "prompt": "consent",
+        "scope": " ".join(scopes), "access_type": "offline", "prompt": "consent",
     })
 
     code = {}
