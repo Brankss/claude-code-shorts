@@ -18,8 +18,8 @@ from .gfx import INK, WHITE, draw_text, mix, rgba
 from .themes import _hex
 
 PALETTES = [
-    ("#8FCBE6", "#A98BE0"), ("#6CCBBA", "#EBD27A"), ("#E0625C", "#EBD27A"),
-    ("#EA9EC0", "#6C98E4"), ("#7DBB7B", "#8FCBE6"), ("#EFA25A", "#EA9EC0"),
+    ("#4FC8F5", "#A66CFF"), ("#21D4B4", "#FFD23F"), ("#FF5A50", "#FFD23F"),
+    ("#FF74B6", "#3F82FF"), ("#43C463", "#4FC8F5"), ("#FF953A", "#FF74B6"),
 ]
 SCALES = {
     "major pentatonic": [0, 2, 4, 7, 9],
@@ -28,6 +28,15 @@ SCALES = {
     "dorian": [0, 2, 3, 5, 7, 9, 10],
 }
 CX, CY = 540.0, 1130.0
+# Il video non parte dall'allineamento (il momento più piatto) ma da un pattern già sparpagliato:
+# l'allineamento arriva a SYNC_AT secondi. Il periodo resta TOTAL, quindi il loop è sempre perfetto.
+SYNC_AT = 20.0
+OFFSET = TOTAL - SYNC_AT
+
+
+def cycle_time(vt):
+    """Tempo nel ciclo dell'animazione (0 = tutti allineati) per un istante del video."""
+    return (vt + OFFSET) % TOTAL
 R_MIN, R_MAX = 70.0, 470.0
 
 
@@ -61,8 +70,8 @@ def params(episode):
     variant = "arcs" if episode % 2 else "rings"
     return Params(
         variant=variant,
-        n=int(rng.choice([14, 16, 18])),
-        c0=int(rng.choice([5, 6, 7])) if variant == "arcs" else int(rng.choice([9, 10, 12])),
+        n=int(rng.choice([12, 14, 16])),
+        c0=int(rng.choice([3, 4, 5])) if variant == "arcs" else int(rng.choice([6, 7, 8])),
         palette=PALETTES[int(rng.integers(len(PALETTES)))],
         scale=str(rng.choice(list(SCALES))),
         root=int(rng.choice([45, 48, 50])),
@@ -113,12 +122,13 @@ class Renderer(BaseRenderer):
 
     def draw(self, c, f, vt):
         p = self.p
-        age = self._last_hit(vt)
+        tau = cycle_time(vt)
+        age = self._last_hit(tau)
         glow = np.exp(-age / 0.35)
         if p.variant == "arcs":
-            self._arcs(c, vt, glow)
+            self._arcs(c, tau, glow)
         else:
-            self._rings(c, vt, glow)
+            self._rings(c, tau, glow)
         self._hud(c, vt)
 
     def _arcs(self, c, t, glow):
@@ -128,14 +138,14 @@ class Renderer(BaseRenderer):
         for i in range(p.n):
             r, col = p.radius(i), self.colors[i]
             rect = skia.Rect(CX - r, CY - r, CX + r, CY + r)
-            for sign, base in ((1, 1.0), (-1, 0.22)):  # arco e riflesso
+            for sign, base in ((1, 1.0), (-1, 0.3)):  # arco e riflesso
                 c.drawArc(rect, 180 if sign > 0 else 0, 180, False, skia.Paint(
-                    AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=2.5,
-                    Color=rgba(mix(col, WHITE, 0.3 * glow[i]), (0.22 + 0.6 * glow[i]) * base)))
+                    AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=4,
+                    Color=rgba(mix(col, WHITE, 0.3 * glow[i]), (0.38 + 0.55 * glow[i]) * base)))
             a = angle(p, i, t)
             x, y = CX + r * math.cos(a), CY - r * math.sin(a)
-            c.drawCircle(x, y, 11, skia.Paint(AntiAlias=True, Color=rgba(col)))
-            c.drawCircle(x, 2 * CY - y, 11, skia.Paint(AntiAlias=True, Color=rgba(col, 0.22)))
+            c.drawCircle(x, y, 15, skia.Paint(AntiAlias=True, Color=rgba(col)))
+            c.drawCircle(x, 2 * CY - y, 15, skia.Paint(AntiAlias=True, Color=rgba(col, 0.3)))
             for ex in (CX - r, CX + r):
                 c.drawCircle(ex, CY, 4 + 3 * glow[i], skia.Paint(AntiAlias=True, Color=rgba(col, 0.35 + 0.6 * glow[i])))
 
@@ -147,26 +157,27 @@ class Renderer(BaseRenderer):
         for i in range(p.n):
             r, col = p.radius(i), self.colors[i]
             c.drawCircle(CX, cy, r, skia.Paint(
-                AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=2.5,
-                Color=rgba(mix(col, WHITE, 0.3 * glow[i]), 0.18 + 0.6 * glow[i])))
+                AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=4,
+                Color=rgba(mix(col, WHITE, 0.3 * glow[i]), 0.34 + 0.55 * glow[i])))
             a = angle(p, i, t)
-            c.drawCircle(CX + r * math.cos(a), cy - r * math.sin(a), 11, skia.Paint(AntiAlias=True, Color=rgba(col)))
+            c.drawCircle(CX + r * math.cos(a), cy - r * math.sin(a), 15, skia.Paint(AntiAlias=True, Color=rgba(col)))
 
     def _hud(self, c, vt):
         k = self.header(c, vt)
         if k <= 0:
             return
-        left = TOTAL - vt
+        # Tempo al prossimo allineamento: a SYNC_AT nel video, poi di nuovo dopo il loop.
+        left = (SYNC_AT - vt) % TOTAL
         y = 330
-        if left > 0.5:
-            s = f"Next sync in 0:{int(math.ceil(left)):02d}"
-        else:
+        if abs(vt - SYNC_AT) < 1.2:
             s = "Sync"
+        else:
+            s = f"Next sync in 0:{int(math.ceil(left)):02d}"
         draw_text(c, s, gfx.text(34), W / 2, y, color=INK, alpha=0.75 * k)
         # Linea di avanzamento sottile verso il sync.
         bx, bw = 290.0, 500.0
         c.drawLine(bx, y + 34, bx + bw, y + 34, skia.Paint(AntiAlias=True, StrokeWidth=3, Color=rgba(INK, 0.12 * k)))
-        c.drawLine(bx, y + 34, bx + bw * vt / TOTAL, y + 34,
+        c.drawLine(bx, y + 34, bx + bw * (1 - left / TOTAL), y + 34,
                    skia.Paint(AntiAlias=True, StrokeWidth=3, Color=rgba(self.colors[-1], 0.9 * k)))
 
 
@@ -174,7 +185,8 @@ def build_audio(p):
     mx = A.Mixer(TOTAL)
     notes = p.notes()
     gain = 0.5 / math.sqrt(p.n)
-    for t, i in hits(p):
+    for tau, i in hits(p):
+        t = (tau - OFFSET) % TOTAL
         pan = (p.radius(i) / R_MAX) * (0.5 if (i % 2) else -0.5)
         mx.add(t, A.kalimba(A.note(notes[i] + 12)), gain, pan=pan, reverb=0.5)
     # Bordone molto basso sulla tonica, per tutto il video.

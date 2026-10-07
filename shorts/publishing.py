@@ -35,12 +35,12 @@ COPY = {
                  "simulation", "relaxing", "liquid", "maze race"],
     },
     "sync": {
-        "title": "Wait for them to sync again (Part {ep})",
+        "title": "Wait for them to sync (Part {ep})",
         "lines": [
             "Every dot plays a note each time it hits the line.",
-            "Wait for the last second.",
+            "Wait for the moment they all line up.",
             "",
-            "Each orbit loops a different number of times, so they only line up again at the very end. "
+            "Each orbit loops a different number of times, so they only line up once per loop. "
             "Polyrhythm visualized in code.",
         ],
         "hashtags": ["#polyrhythm", "#satisfying", "#relaxing", "#asmr"],

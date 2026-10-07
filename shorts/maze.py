@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-N = 21                      # celle per lato
+N = 13                      # celle per lato: poche e grandi, leggibili sul telefono
 X0, Y0, SIZE = 60.0, 470.0, 960.0
 CELL = SIZE / N
 BRAID = 0.03               # quota di muri rimossi per creare percorsi alternativi

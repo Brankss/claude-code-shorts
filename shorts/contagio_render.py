@@ -277,7 +277,7 @@ class Renderer(BaseRenderer):
         for v0, label in tl.captions:
             a = fade(vt - v0, 0.35, 1.6, 0.5)
             if a > 0:
-                draw_text(c, label, gfx.text(28), W / 2, 462, color=INK, alpha=0.8 * a, tracking=7)
+                draw_text(c, label, gfx.text(28), W / 2, 440, color=INK, alpha=0.8 * a, tracking=7)
         # Notizie sulle squadre: si vede solo l'ultima.
         shown = [n for n in tl.news if 0 <= vt - n[0] < 1.9]
         if shown:
@@ -287,8 +287,8 @@ class Renderer(BaseRenderer):
             fn, fw = gfx.title(30), gfx.text(30)
             w = fn.measureText(team.name + " ") + fw.measureText(what)
             x = W / 2 - w / 2
-            draw_text(c, team.name + " ", fn, x, 518, color=team.color, alpha=a, align="left")
-            draw_text(c, what, fw, x + fn.measureText(team.name + " "), 518, color=INK, alpha=0.7 * a,
+            draw_text(c, team.name + " ", fn, x, 492, color=team.color, alpha=a, align="left")
+            draw_text(c, what, fw, x + fn.measureText(team.name + " "), 492, color=INK, alpha=0.7 * a,
                       align="left")
 
     def _winner(self, c, a):

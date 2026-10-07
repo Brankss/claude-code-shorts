@@ -15,28 +15,28 @@ def _hex(h):
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
-# 12 tinte morbide ma distinguibili su sfondo scuro.
+# 12 tinte piene e distinguibili su sfondo scuro (piene, non neon: devono restare piacevoli).
 ZODIAC = [
-    Team("Aries", "♈", _hex("#E0625C")),
-    Team("Taurus", "♉", _hex("#7DBB7B")),
-    Team("Gemini", "♊", _hex("#EBD27A")),
-    Team("Cancer", "♋", _hex("#8FCBE6")),
-    Team("Leo", "♌", _hex("#EFA25A")),
-    Team("Virgo", "♍", _hex("#BCD57E")),
-    Team("Libra", "♎", _hex("#EA9EC0")),
-    Team("Scorpio", "♏", _hex("#A98BE0")),
-    Team("Sagittarius", "♐", _hex("#C3C8D2")),
-    Team("Capricorn", "♑", _hex("#C4A386")),
-    Team("Aquarius", "♒", _hex("#6C98E4")),
-    Team("Pisces", "♓", _hex("#6CCBBA")),
+    Team("Aries", "♈", _hex("#FF5A50")),
+    Team("Taurus", "♉", _hex("#43C463")),
+    Team("Gemini", "♊", _hex("#FFD23F")),
+    Team("Cancer", "♋", _hex("#4FC8F5")),
+    Team("Leo", "♌", _hex("#FF953A")),
+    Team("Virgo", "♍", _hex("#B4E043")),
+    Team("Libra", "♎", _hex("#FF74B6")),
+    Team("Scorpio", "♏", _hex("#A66CFF")),
+    Team("Sagittarius", "♐", _hex("#DCE1EA")),
+    Team("Capricorn", "♑", _hex("#D9A066")),
+    Team("Aquarius", "♒", _hex("#3F82FF")),
+    Team("Pisces", "♓", _hex("#21D4B4")),
 ]
 
 # Quattro colori per i format a 4 squadre (Labirinto).
 COLORS4 = [
-    Team("Red", "", _hex("#E0625C")),
-    Team("Yellow", "", _hex("#EBD27A")),
-    Team("Blue", "", _hex("#6C98E4")),
-    Team("Green", "", _hex("#7DBB7B")),
+    Team("Red", "", _hex("#FF5A50")),
+    Team("Yellow", "", _hex("#FFD23F")),
+    Team("Blue", "", _hex("#3F82FF")),
+    Team("Green", "", _hex("#43C463")),
 ]
 
 THEMES = {

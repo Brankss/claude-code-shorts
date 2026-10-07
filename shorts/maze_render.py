@@ -8,8 +8,9 @@ from .base import FPS, TOTAL, W, BaseRenderer
 from .gfx import INK, WHITE, draw_text, ease_in_out, ease_out, fade, mix, rgba
 from .maze import CELL, GOAL, N, SIZE, SOURCES, X0, Y0
 
-VT_WIN = 32.0     # il vincitore arriva sempre qui, qualunque sia la durata simulata
-WALL = 3.0
+VT_WIN = 19.5     # il vincitore arriva sempre qui, qualunque sia la durata simulata
+PREROLL = 0.2     # il video parte con la gara già al 20%: nel primo frame i liquidi scorrono già
+WALL = 5.0
 INS = WALL / 2 + 1.5
 
 
@@ -21,7 +22,8 @@ class Timeline:
     def __init__(self, m, teams):
         self.m = m
         self.teams = teams
-        self.scale = VT_WIN / m.t_win
+        self.t0 = PREROLL * m.t_win
+        self.scale = VT_WIN / (m.t_win - self.t0)
         n = int(TOTAL * FPS)
         self.n_frames = n
 
@@ -68,17 +70,21 @@ class Timeline:
                 lead = top
             self.leader[f] = lead
 
-        self.news = [(t * self.scale, team, "is trapped") for t, team in m.trapped]
+        self.news = [(self.vt(t), team, "is trapped") for t, team in m.trapped if self.vt(t) > 0.5]
         # "Final stretch" quando qualcuno è a pochi passi dal centro (se c'è tempo per vederlo).
-        close = np.nonzero(self.best.min(axis=1) <= 6)[0]
-        if len(close) and close[0] / FPS < VT_WIN - 3:
+        close = np.nonzero(self.best.min(axis=1) <= 4)[0]
+        if len(close) and 2.5 < close[0] / FPS < VT_WIN - 3:
             self.news.append((close[0] / FPS, None, "FINAL STRETCH"))
         self.news.sort(key=lambda x: x[0])
 
         self.path = m.path()
 
     def sim_t(self, f):
-        return min(f / FPS, VT_WIN) / self.scale
+        return self.t0 + min(f / FPS, VT_WIN) / self.scale
+
+    def vt(self, t):
+        """Tempo video di un istante della simulazione (negativo se è prima dell'inizio del video)."""
+        return (t - self.t0) * self.scale
 
 
 class Renderer(BaseRenderer):
@@ -223,7 +229,7 @@ class Renderer(BaseRenderer):
             x += fn.measureText(team.name)
             steps = int(tl.best[f][lead])
             draw_text(c, f"  {steps} steps away", ft, x, y, color=INK, alpha=0.7 * k, align="left")
-        trapped = sum(1 for tt, _ in self.m.trapped if tt * tl.scale <= vt)
+        trapped = sum(1 for tt, _ in self.m.trapped if tl.vt(tt) <= vt)
         draw_text(c, f"{n_t - trapped} of {n_t} flowing", ft, bx + bw, y, color=INK, alpha=0.5 * k, align="right")
 
         if won:

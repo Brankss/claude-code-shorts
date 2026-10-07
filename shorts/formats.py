@@ -92,7 +92,7 @@ class Maze:
 
 class Sync:
     name = "sync"
-    title_lines = ["Wait for them", "to sync again"]
+    title_lines = ["Wait for them", "to sync"]
     subtitle = "Every hit plays a note"
 
     def pick(self, episode):

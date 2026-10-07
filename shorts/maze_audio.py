@@ -31,8 +31,8 @@ def build(tl):
     for a, r, c in tl.cells:
         team = int(m.owner[r, c])
         count[team] += 1
-        vt = a * tl.scale
-        if count[team] % EVERY or vt - last[team] < 0.22:
+        vt = tl.vt(a)
+        if vt < 0 or count[team] % EVERY or vt - last[team] < 0.22:
             continue
         last[team] = vt
         start, octave = VOICES[team]

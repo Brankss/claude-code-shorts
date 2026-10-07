@@ -5,7 +5,8 @@ Generatore di YouTube Shorts faceless fatti interamente in codice: simulazione, 
 Genere: relax / ipnotico. Tre format completamente diversi che si alternano ogni giorno, tutti nello stesso stile minimal:
 - **Grafica**: colori piatti e morbidi, linee sottili, testo sobrio, niente flash o scossoni.
 - **Audio**: pad ambient più note tipo kalimba o campane legate a quello che succede a schermo.
-- **Durata e loop**: 40 secondi, con dissolvenza finale sul primo frame così il loop non ha stacchi.
+- **Durata e loop**: 25 secondi, con dissolvenza finale sul primo frame così il loop non ha stacchi.
+- **Hook**: dal primo frame lo schermo è già pieno di colore e azione. Il labirinto parte con la gara già al 20%, il Sync da un pattern sparpagliato (si allinea al secondo 20), Contagio con palline grandi e scontri immediati.
 
 ## Format 1: Contagio (`contagio`)
 
@@ -14,10 +15,9 @@ Genere: relax / ipnotico. Tre format completamente diversi che si alternano ogni
 | Tempo | Evento |
 |---|---|
 | 0s | Hook: la domanda grande sopra l'arena già in movimento |
-| 8.5s | *Speed up*: le palline accelerano |
-| 15s | *Gravity on* |
-| 20s | *Gravity flipped* |
-| 24.5s | *The wall opens*: si apre un varco rotante, chi esce è fuori |
+| 4s | *Speed up*: le palline accelerano |
+| 8s | *Gravity on* |
+| 12s | *The wall opens*: si apre un varco rotante, chi esce è fuori |
 | finale | slow-mo e zoom leggero sul colpo decisivo, "X wins" |
 
 Il generatore simula centinaia di partite senza renderizzarle e tiene la più drammatica (**drama score**), cioè quella con:
@@ -29,7 +29,7 @@ Tra i seed si sceglie la partita, non il vincitore: nei titoli non va scritto "1
 
 ## Format 2: Labirinto (`maze`)
 
-Quattro liquidi colorati partono dagli angoli di un labirinto 21×21 e scorrono nei corridoi. Vince il primo che arriva al centro.
+Quattro liquidi colorati partono dagli angoli di un labirinto 13×13 e scorrono nei corridoi. Vince il primo che arriva al centro.
 - Ogni cella ha un tempo di attraversamento casuale, quindi la gara non si risolve a occhio.
 - Chi arriva prima in una cella la occupa e blocca gli altri: un colore può restare intrappolato.
 - Durante la gara: barrette di progresso, chi è più vicino e quanti passi mancano, avvisi *is trapped* e *final stretch*.
@@ -40,7 +40,7 @@ Il drama score premia gli arrivi al fotofinish, i cambi di chi è più vicino e 
 ## Format 3: Sync (`sync`)
 
 Pallini su orbite concentriche a velocità diverse (polyrhythm). Ogni colpo suona una nota.
-- Partono allineati, si sparpagliano in pattern ipnotici e si riallineano esattamente alla fine.
+- Il video parte da un pattern già sparpagliato e i pallini si allineano tutti al secondo 20, poi il loop riparte senza stacchi.
 - Un countdown "Next sync in 0:12" tiene lo spettatore fino al payoff.
 - Due varianti si alternano: **arcs** (vanno e vengono su semicerchi, con riflesso) e **rings** (girano in tondo).
 - Ogni episodio cambia numero di orbite, velocità, palette e scala musicale.

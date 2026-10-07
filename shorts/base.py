@@ -8,7 +8,7 @@ from .gfx import BG, INK, draw_text, ease_in_out, rgba
 
 W, H = 1080, 1920
 FPS = 60
-TOTAL = 40.0
+TOTAL = 25.0      # corto: più gente arriva al finale e il loop riparte prima
 HOOK_END = 1.8     # la domanda grande resta ~1s, poi lascia il posto all'header
 LOOP_FADE = 0.45   # dissolvenza finale sul primo frame: il loop non ha stacchi
 WORLD_TOP = 404    # sopra questa riga c'è solo l'HUD

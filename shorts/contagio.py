@@ -13,31 +13,30 @@ import numpy as np
 
 W, H = 1080, 1920
 CENTER = np.array([540.0, 1010.0])
-ARENA_R = 440.0
-BALL_R = 36.0
+ARENA_R = 480.0
+BALL_R = 40.0
 PER_TEAM = 4
 SUBSTEPS_PER_SEC = 240
 BASE_SPEED = 470.0
 IMMUNITY = 0.3  # secondi in cui una pallina appena convertita non può essere riconvertita
 # Probabilità che uno scontro converta: bassa all'inizio, piena quando il muro si rompe.
-CONVERT_P = 0.3
+CONVERT_P = 0.5
 CONVERT_P_FINAL = 1.0
 
 # Eventi caos programmati (tempo simulazione). Il render mostra un banner per ognuno.
 SCHEDULE = [
-    (8.5, "speed", 1.45, "SPEED UP!"),
-    (15.0, "gravity", 1300.0, "GRAVITY ON"),
-    (20.0, "gravity", -1300.0, "GRAVITY FLIP!"),
-    (24.5, "gap", None, "THE WALL BREAKS!"),
+    (4.0, "speed", 1.4, "SPEED UP!"),
+    (8.0, "gravity", 1300.0, "GRAVITY ON"),
+    (12.0, "gap", None, "THE WALL BREAKS!"),
 ]
 GAP_SPIN = 0.9                  # rad/s
 GAP_OPEN = (0.0, np.radians(22))
 GAP_WIDEN_TO = np.radians(58)
-GAP_WIDEN_TIME = 8.0
+GAP_WIDEN_TIME = 5.0
 
-# Finestra in cui deve arrivare il vincitore perché il video duri ~40s.
-END_MIN, END_MAX = 32.8, 34.3
-TAIL = 7.0  # secondi di simulazione extra dopo la vittoria (slow-mo + festa)
+# Finestra in cui deve arrivare il vincitore perché il video duri 25s (con slow-mo e festa).
+END_MIN, END_MAX = 18.8, 20.2
+TAIL = 6.0  # secondi di simulazione extra dopo la vittoria (slow-mo + festa)
 
 IN_PLAY, ESCAPING, GONE = 0, 1, 2
 
@@ -234,7 +233,7 @@ def drama_score(rec):
 
     # Cambi di leader (solo se il nuovo leader è davanti in modo netto).
     leader, changes = None, 0
-    for row in sample[12:]:
+    for row in sample[6:]:
         top = int(np.argmax(row))
         if leader is None:
             leader = top
@@ -243,9 +242,9 @@ def drama_score(rec):
             changes += 1
 
     w = rec.winner
-    after = counts[int(8 / dt): end_step, w]
+    after = counts[int(4 / dt): end_step, w]
     winner_min = int(after.min()) if len(after) else PER_TEAM
-    s15 = int(15 / dt)
+    s15 = int(9 / dt)
     rank15 = int((counts[s15] > counts[s15, w]).sum())
 
     elim_times = [0.0] + [e[0] for e in rec.eliminations]
@@ -269,13 +268,13 @@ def drama_score(rec):
     score += 6.0 if winner_min <= 2 else 0.0
     score += 4.0 if winner_min <= 1 else 0.0
     score += 3.0 if rank15 >= 3 else 0.0
-    score += 4.0 if 3.0 <= duel_len <= 9.0 else (-4.0 if duel_len > 14 else 0.0)
+    score += 4.0 if 2.0 <= duel_len <= 6.0 else (-4.0 if duel_len > 9 else 0.0)
     score += min(duel_changes, 6) * 1.5
     score += 3.0 if alive_at_gap >= 3 else 0.0
-    score -= max(0.0, max_quiet - 8.0) * 1.5
+    score -= max(0.0, max_quiet - 5.0) * 1.5
     return {
         "score": round(float(score), 2), "lead_changes": changes, "winner_min": winner_min,
-        "winner_rank_at_15s": rank15 + 1, "duel_len": round(float(duel_len), 2),
+        "winner_rank_mid": rank15 + 1, "duel_len": round(float(duel_len), 2),
         "duel_changes": duel_changes, "alive_at_gap": alive_at_gap,
         "max_quiet": round(float(max_quiet), 2), "t_end": round(float(rec.t_end), 2), "winner": w,
     }
