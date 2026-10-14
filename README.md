@@ -45,6 +45,20 @@ Pallini su orbite concentriche a velocità diverse (polyrhythm). Ogni colpo suon
 - Due varianti si alternano: **arcs** (vanno e vengono su semicerchi, con riflesso) e **rings** (girano in tondo).
 - Ogni episodio cambia numero di orbite, velocità, palette e scala musicale.
 
+## Format extra: What If (`whatif`)
+
+Genere diverso dagli altri tre: storie "e se tutti facessero X?" a effetto farfalla, con un twist vero alla fine. Non è nella rotazione giornaliera (ogni storia è scritta e verificata a mano). Analisi del video di riferimento, formula, guida per scrivere storie nuove e idee con fonti: [docs/WHATIF.md](docs/WHATIF.md).
+
+- Scena vera simulata (traffico IDM per lo zipper merge), camera inclinata che segue il protagonista giallo in mezzo a una folla grigia.
+- Zoom continuo a potenze di dieci: strada, città, stato, paese, globo, spazio, Luna. Mappe vere (Natural Earth).
+- HUD da documentario: luogo, orologio che gira durante i salti di tempo, contatore con variazione %, metrica secondaria, barra di scala.
+- Rewind, twist con il dato reale e chiusura sulla stessa inquadratura del primo frame (loop).
+- Audio senza voce: traffico e clacson presi dalla simulazione, pad e campane che salgono con l'escalation, whoosh, macchina da scrivere, nastro che riavvolge.
+
+```bash
+python make.py --format whatif --episode 1 --out out/whatif_zipper.mp4
+```
+
 ## Uso
 
 ```bash
@@ -101,5 +115,8 @@ Nome, handle, descrizione, impostazioni e playlist sono in [docs/CHANNEL_SETUP.m
 - `shorts/audio.py`: sintetizzatori (pad, kalimba, campane) e mixer con riverbero
 - `shorts/gfx.py`: helper skia (font, testo, colori, easing)
 - `shorts/themes.py`: squadre (nome, glifo, colore)
+- `shorts/whatif.py`: engine di What If (beat, camera a potenze di dieci, mappe, spazio, HUD, didascalie, rewind, loop)
+- `shorts/stories.py`: le storie di What If; `shorts/highway.py`: simulazione del traffico e disegno della strada; `shorts/whatif_audio.py`: sound design
+- `shorts/geo.py`: dati Natural Earth (TopoJSON in `assets/geo`), proiezione ortografica e path pronti
 
-Font: Montserrat (OFL) e DejaVu Sans (licenze in `assets/fonts`).
+Font: Montserrat (OFL), IBM Plex Mono (OFL) e DejaVu Sans (licenze in `assets/fonts`). Mappe: Natural Earth (pubblico dominio) dai pacchetti world-atlas e us-atlas (ISC, licenze in `assets/geo`).

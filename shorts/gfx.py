@@ -28,6 +28,11 @@ def glyph(size):
     return _font("DejaVuSans-Bold.ttf", size)
 
 
+def mono(size, weight="Regular"):
+    """Monospace per HUD e numeri (IBM Plex Mono: Regular, Medium, SemiBold)."""
+    return _font(f"IBMPlexMono-{weight}.woff", size)
+
+
 @lru_cache(maxsize=None)
 def _font(name, size):
     f = skia.Font(typeface(name), size)

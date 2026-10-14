@@ -73,8 +73,9 @@ def publish_at(date):
     return when.astimezone(dt.timezone.utc)
 
 
-def build(fmt, episode, date=None):
-    c = COPY[fmt]
+def build(fmt, episode, date=None, copy=None):
+    """copy: testi propri di un singolo video (What If), al posto di quelli del format."""
+    c = copy or COPY[fmt]
     title = c["title"].format(ep=episode or 1)
     description = "\n".join(c["lines"]) + "\n\n" + " ".join(c["hashtags"] + ["#shorts"])
     meta = {"title": title, "description": description, "tags": c["tags"], "settings": SETTINGS}

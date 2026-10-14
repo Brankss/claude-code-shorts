@@ -14,10 +14,12 @@ from .base import FPS, H, W
 
 def encode(job, wav, out):
     ff = imageio_ffmpeg.get_ffmpeg_exe()
+    # Tetto al bitrate: 5M per i video corti, più basso per quelli lunghi (What If) così restano sotto i 30 MB.
+    mbps = min(5.0, 28 * 8 / (job.n_frames / FPS) - 0.25)
     cmd = [ff, "-y", "-loglevel", "error",
            "-f", "rawvideo", "-pix_fmt", "rgba", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
            "-i", str(wav),
-           "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-maxrate", "5M", "-bufsize", "10M",
+           "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-maxrate", f"{mbps:.1f}M", "-bufsize", f"{2 * mbps:.1f}M",
            "-pix_fmt", "yuv420p", "-profile:v", "high", "-c:a", "aac", "-b:a", "192k", "-shortest",
            "-movflags", "+faststart", str(out)]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)

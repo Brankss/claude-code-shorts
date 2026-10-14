@@ -105,5 +105,23 @@ class Sync:
                    _meta(self.name, seed, episode, stats=p.__dict__))
 
 
-FORMATS = {f.name: f for f in (Contagio(), Maze(), Sync())}
+class WhatIf:
+    """Storie a effetto farfalla con twist reale (vedi whatif.py e stories.py). Non è nella rotazione
+    giornaliera: ogni storia è scritta a mano. Episodio n = n-esima storia di STORIES."""
+    name = "whatif"
+
+    def pick(self, episode):
+        return episode
+
+    def prepare(self, seed, episode=None):
+        from . import stories, whatif, whatif_audio
+        key = list(stories.STORIES)[(seed - 1) % len(stories.STORIES)]
+        story, scene, stats = stories.STORIES[key]()
+        r = whatif.Renderer(story, scene)
+        meta = {"format": self.name, "story": key, "seed": seed, "episode": episode, "winner": None,
+                "stats": stats, "sources": list(story.sources), **publishing.build(self.name, episode, copy=story.copy)}
+        return Job(r.n_frames, r.render, lambda: whatif_audio.build(r), meta)
+
+
+FORMATS = {f.name: f for f in (Contagio(), Maze(), Sync(), WhatIf())}
 CYCLE = ["contagio", "maze", "sync"]
