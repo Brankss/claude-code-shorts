@@ -151,3 +151,79 @@ def last_event(times, t):
     """Secondi dall'ultimo evento in times (ordinati) prima di t; inf se nessuno."""
     i = int(np.searchsorted(times, t, side="right")) - 1
     return t - times[i] if i >= 0 else math.inf
+
+
+# ---------- didascalie a blocchi e numeri che rullano ----------
+
+def chunks(text, max_words=4):
+    """Blocchi da mostrare uno alla volta: separati da | oppure al massimo max_words parole,
+    spezzando dopo la punteggiatura quando si può."""
+    if "|" in text:
+        return [p.strip() for p in text.split("|") if p.strip()]
+    out, cur = [], []
+    for w in text.split():
+        cur.append(w)
+        if len(cur) >= max_words or w.rstrip("*")[-1:] in ".,!?:;":
+            out.append(" ".join(cur))
+            cur = []
+    if cur:
+        out.append(" ".join(cur))
+    return out
+
+
+def chunk_times(text, total=None):
+    """Durata di ogni blocco: 0.25 s + 0.06 s per carattere (minimo leggibile), scalata su total se dato."""
+    cs = chunks(text)
+    ds = [0.25 + 0.06 * len(c.replace("*", "")) for c in cs]
+    if total:
+        k = total / sum(ds)
+        ds = [d * k for d in ds]
+    return cs, ds
+
+
+def chunked(c, text, age, x, y, total=None, **kw):
+    """Didascalia a blocchi: un blocco alla volta, ognuno con il suo pop parola per parola."""
+    cs, ds = chunk_times(text, total)
+    t = 0.0
+    for i, (ch, d) in enumerate(zip(cs, ds)):
+        if age < t + d or i == len(cs) - 1:
+            return caption(c, ch, age - t, x, y, per_word=0.07, **kw)
+        t += d
+    return y
+
+
+def rolling_number(c, value, x, y, font, color=(255, 255, 255), alpha=1.0, align="center", fmt="{:,.0f}"):
+    """Numero a contachilometri: le cifre basse scorrono, quelle alte girano solo quando serve."""
+    s = fmt.format(value)
+    digits = [ch for ch in s if ch.isdigit()]
+    n = len(digits)
+    w = font.measureText(s)
+    x0 = x - w / 2 if align == "center" else (x - w if align == "right" else x)
+    m = font.getMetrics()
+    top, bot = y + m.fAscent - 4, y + m.fDescent + 4
+    h = (m.fDescent - m.fAscent) * 1.05
+    paint = skia.Paint(AntiAlias=True, Color=rgba(color, alpha))
+    v = abs(value)
+    c.save()
+    c.clipRect(skia.Rect(x0 - 10, top, x0 + w + 10, bot))
+    k = n
+    cx = x0
+    for ch in s:
+        cw = font.measureText(ch)
+        if ch.isdigit():
+            k -= 1
+            p = 10 ** k
+            below = v % p
+            roll = 0.0
+            if p == 1:
+                roll = v % 1
+            elif below > p - 1:
+                roll = below - (p - 1)
+            d = int(v // p) % 10
+            for dd, off in ((d, -roll), ((d + 1) % 10, 1 - roll)):
+                if -1 < off < 1:
+                    c.drawString(str(dd), cx, y + off * h, font, paint)
+        else:
+            c.drawString(ch, cx, y, font, paint)
+        cx += cw
+    c.restore()
