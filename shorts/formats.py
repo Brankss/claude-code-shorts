@@ -15,6 +15,8 @@ class Job:
     render: Callable      # frame -> buffer RGBA
     audio: Callable       # () -> array stereo
     meta: dict
+    workers: int = 1      # processi di render in parallelo (solo per render senza stato tra un frame e l'altro)
+    vf: str = None        # post-produzione ffmpeg (bloom, grana, vignetta...)
 
 
 def rotating(episode, n):
@@ -105,6 +107,11 @@ class Sync:
                    _meta(self.name, seed, episode, stats=p.__dict__))
 
 
+# Post-produzione "cinematografica" per i format narrativi: bloom sulle luci, vignetta leggera, grana.
+POST = ("format=gbrp,split[a][b];[b]scale=iw/4:ih/4,curves=all='0/0 0.45/0 1/1',gblur=sigma=6,"
+        "scale=1080:1920[g];[a][g]blend=all_mode=screen,vignette=angle=PI/6,noise=alls=4:allf=t+u")
+
+
 class WhatIf:
     """Storie a effetto farfalla con twist reale (vedi whatif.py e stories.py). Non è nella rotazione
     giornaliera: ogni storia è scritta a mano. Episodio n = n-esima storia di STORIES."""
@@ -120,7 +127,7 @@ class WhatIf:
         r = whatif.Renderer(story, scene)
         meta = {"format": self.name, "story": key, "seed": seed, "episode": episode, "winner": None,
                 "stats": stats, "sources": list(story.sources), **publishing.build(self.name, episode, copy=story.copy)}
-        return Job(r.n_frames, r.render, lambda: whatif_audio.build(r), meta)
+        return Job(r.n_frames, r.render, lambda: whatif_audio.build(r), meta, workers=4, vf=POST)
 
 
 FORMATS = {f.name: f for f in (Contagio(), Maze(), Sync(), WhatIf())}
