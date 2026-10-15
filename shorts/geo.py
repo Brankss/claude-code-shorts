@@ -103,7 +103,7 @@ def distance_km(lat1, lon1, lat2, lon2):
 
 
 class Atlas:
-    """Path proiettati per una storia: terre, paesi, stati USA, e i puntini luminosi che si accendono."""
+    """Path proiettati per una storia: terre, laghi grandi, paesi, stati USA, e i puntini luminosi che si accendono."""
 
     def __init__(self, lat0, lon0, seed=7):
         self.proj = Projection(lat0, lon0)
@@ -111,6 +111,8 @@ class Atlas:
         self.countries = {k: self.proj.path(v) for k, v in countries.items()}
         self.land = self.proj.path(features("countries-50m.json", "land")["land"])
         self.states = {k: self.proj.path(v) for k, v in features("us-states-10m.json", "states").items()}
+        rings = json.loads((GEO_DIR / "lakes-major.json").read_text())["rings"]
+        self.lakes = self.proj.path([np.asarray(r, float) for r in rings])
         self.dots = self._dots(seed)
 
     def _dots(self, seed, per_scale=700):
@@ -125,7 +127,8 @@ class Atlas:
                 th = rng.random(per_scale) * 2 * np.pi
                 x, y = rr * np.cos(th), rr * np.sin(th)
                 for a, b in zip(x, y):
-                    if self.land.contains(float(a), float(b)) and n < per_scale:
+                    if (n < per_scale and self.land.contains(float(a), float(b))
+                            and not self.lakes.contains(float(a), float(b))):
                         pts.append((a, b))
                         dist.append(math.hypot(a, b) / 1000)
                         n += 1

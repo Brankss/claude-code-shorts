@@ -515,6 +515,8 @@ class HighwayScene:
     labels = (etichetta A, etichetta B).
     """
 
+    near_log10 = 2.2   # sotto ~160 m di inquadratura si sente la strada
+
     def __init__(self, recs, units, labels=("MERGE EARLY", "ZIPPER MERGE"), tags=(), switch_sim=None):
         self.recs = recs
         self.units = units
@@ -624,3 +626,35 @@ class HighwayScene:
             c.drawLine(bx, bot[1], bx - side * 14, bot[1], p)
             draw_text(c, fmt_dist(q, self.units), fb, bx + side * 16, (top[1] + bot[1]) / 2, color=AMBER, alpha=a,
                       align="left" if side > 0 else "right", vcenter=True)
+
+    def audio(self, mx, r, ts, near, rng):
+        """Rombo del traffico, clacson e freccia presi dalla simulazione mentre la strada è in vista."""
+        from . import whatif_audio as WA
+        n = mx.n
+
+        def rumble(m, rng):
+            brown = WA._hp(np.cumsum(rng.normal(0, 1, m)), 25)
+            brown /= np.abs(brown).max()
+            x = WA._lp(brown, 380) * 1.4 + 0.10 * WA._bp(rng.normal(0, 1, m), 700, 2600)
+            return x * (1 + 0.25 * np.sin(2 * np.pi * np.arange(m) / WA.SR / 7.3))
+
+        mx.add(0.0, WA.loop_bed(rumble, n, ts, near, rng) * 0.55, reverb=0.05)
+        tl = r.tl
+        last = None
+        for i, vt in enumerate(ts[:-1]):
+            rec, ts_sim, where = tl.scene_state(vt)
+            if near[i] < 0.3 or where != "earth":
+                last = None
+                continue
+            if last is not None and last[0] == rec and 0 < ts_sim - last[1] < 0.1:
+                for ht, _ in self.recs[rec].honks:
+                    if last[1] < ht <= ts_sim:
+                        mx.add(vt, WA.horn(rng.uniform(0.18, 0.4), rng.uniform(370, 450)), 0.32 * near[i],
+                               pan=rng.uniform(0.1, 0.5), reverb=0.12)
+                sw = self.switch_sim
+                if rec == "A" and sw is not None:
+                    for j in range(12):
+                        tk = sw - 0.3 + j / 4.8
+                        if last[1] < tk <= ts_sim and tk < sw + 3.8:
+                            mx.add(vt, WA.click(2400 if j % 2 == 0 else 1700), 0.12, pan=0.1, reverb=0.02)
+            last = (rec, ts_sim)

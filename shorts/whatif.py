@@ -22,6 +22,7 @@ import numpy as np
 import skia
 
 from . import geo, gfx
+from . import kinetic as K
 from .base import FPS, H, W
 from .gfx import INK, draw_text, ease_in_out, ease_out, rgba
 
@@ -64,7 +65,7 @@ class Beat:
     hatch: tuple = None       # (("states", "all"), ("countries", ["Canada"]), ...)
     scene: tuple = None       # (registrazione, tempo sim a inizio beat[, "earth" | "moon"])
     split: float = None       # confronto affiancato tra due registrazioni (0..1)
-    fx: str = None            # "rewind" | "hit" (colpo basso nell'audio)
+    fx: str = None            # "rewind" | "hit" (colpo basso) | "flash" | "shake"
     fx_dur: float = 1.8
 
 
@@ -81,6 +82,12 @@ class Story:
     labels: tuple = ()        # (testo, lat, lon, w_min, w_max, (dx, dy))
     copy: dict = field(default_factory=dict)
     sources: tuple = ()
+    palette: dict = None      # colori della mappa (es. notte): sea, land, border, accent, dots
+    kpi_fn: object = None     # (t video, timeline) -> valore: KPI calcolato invece che a keyframe
+    kpi_fmt: str = None       # formato per il numero a contachilometri (es. "{:,.0f}")
+
+
+PALETTE = {"sea": SEA, "land": LAND, "border": BORDER, "accent": AMBER, "dots": AMBER}
 
 
 # ---------- tracce ----------
@@ -294,8 +301,11 @@ class Renderer:
     def __init__(self, story, scene):
         self.story = story
         self.scene = scene
+        self.pal = {**PALETTE, **(story.palette or {})}
         self.tl = Timeline(story, scene)
         self.atlas = geo.Atlas(*story.origin)
+        if hasattr(scene, "bind"):
+            scene.bind(self)
         self.n_frames = int(story.duration * FPS)
         self.buf = np.zeros((H, W, 4), np.uint8)
         self.surface = skia.Surface(self.buf)
@@ -325,6 +335,11 @@ class Renderer:
         space_a = ease_in_out((lw - 7.3) / 0.6)
 
         self._stars(c, vt, space_a)
+        c.save()
+        sk = self.tl.fx_k(vt, "shake")
+        if sk is not None:
+            dx, dy = K.shake(sk * 1.2, 22)
+            c.translate(dx, dy)
         if cam.near(0, 0, geo.R_EARTH) and map_a > 0:
             self._earth(c, cam, vt, map_a)
         if cam.near(*MOON_POS, R_MOON):
@@ -334,10 +349,14 @@ class Renderer:
         if space_a > 0:
             self._space_marks(c, cam, space_a)
         self._map_labels(c, cam, map_a)
+        c.restore()
         self._shade(c)
         self._hud(c, cam, vt)
         self._captions(c, cam, vt)
         self._rewind(c, vt)
+        fk = self.tl.fx_k(vt, "flash")
+        if fk is not None:
+            K.flash(c, fk * 1.0, strength=0.7, decay=7)
         if self.frame0 is not None and vt > self.story.duration - LOOP_FADE:
             k = ease_in_out((vt - (self.story.duration - LOOP_FADE)) / LOOP_FADE)
             c.drawImage(self.frame0, 0, 0, skia.SamplingOptions(), skia.Paint(Alphaf=k))
@@ -360,16 +379,18 @@ class Renderer:
         M = cam.matrix()
         c.save()
         c.concat(M)
-        c.drawCircle(0, 0, geo.R_EARTH, skia.Paint(AntiAlias=True, Color=rgba(SEA, a)))
-        c.drawPath(at.land, skia.Paint(AntiAlias=True, Color=rgba(LAND, a)))
+        pal = self.pal
+        c.drawCircle(0, 0, geo.R_EARTH, skia.Paint(AntiAlias=True, Color=rgba(pal["sea"], a)))
+        c.drawPath(at.land, skia.Paint(AntiAlias=True, Color=rgba(pal["land"], a)))
+        c.drawPath(at.lakes, skia.Paint(AntiAlias=True, Color=rgba(pal["sea"], a)))
         border = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=px * 1.6,
-                            Color=rgba(BORDER, a))
+                            Color=rgba(pal["border"], a))
         for p in at.countries.values():
             c.drawPath(p, border)
         if cam.w < 9e6:
             sa = a * min(1.0, 1.4 - math.log10(cam.w) / 7)
             dash = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=px * 1.3,
-                              Color=rgba(BORDER, sa), PathEffect=skia.DashPathEffect.Make([px * 7, px * 6], 0))
+                              Color=rgba(pal["border"], sa), PathEffect=skia.DashPathEffect.Make([px * 7, px * 6], 0))
             for p in at.states.values():
                 c.drawPath(p, dash)
         c.restore()
@@ -397,16 +418,17 @@ class Renderer:
             c.save()
             c.concat(M)
             c.drawPoints(skia.Canvas.kPoints_PointMode, at.dots[0][:n], skia.Paint(
-                AntiAlias=True, StrokeWidth=px * 3.4, StrokeCap=skia.Paint.kRound_Cap, Color=rgba(AMBER, 0.8 * a)))
+                AntiAlias=True, StrokeWidth=px * 3.4, StrokeCap=skia.Paint.kRound_Cap, Color=rgba(pal["dots"], 0.8 * a)))
             c.restore()
         ox, oy = cam.to_screen(0, 0)
         if spread > 0 and cam.w > 2500 and -200 < ox < W + 200 and -200 < oy < H + 200:
             pulse = 0.75 + 0.25 * math.sin(vt * 3)
-            c.drawCircle(ox, oy, 38, skia.Paint(AntiAlias=True, Color=rgba(AMBER, 0.35 * a * pulse),
+            acc = pal["accent"]
+            c.drawCircle(ox, oy, 38, skia.Paint(AntiAlias=True, Color=rgba(acc, 0.35 * a * pulse),
                                                 MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 16)))
             c.drawCircle(ox, oy, 9, skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=2,
-                                               Color=rgba(AMBER, a)))
-            c.drawCircle(ox, oy, 4, skia.Paint(AntiAlias=True, Color=rgba(AMBER, a)))
+                                               Color=rgba(acc, a)))
+            c.drawCircle(ox, oy, 4, skia.Paint(AntiAlias=True, Color=rgba(acc, a)))
         if cam.w > 6e6:
             # alone dell'atmosfera sul bordo del globo
             r = geo.R_EARTH / cam.px
@@ -416,14 +438,15 @@ class Renderer:
                                                MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 6)))
 
     def _hatch(self, c, M, path, a, px):
+        acc = self.pal["accent"]
         c.save()
         c.concat(M)
-        c.drawPath(path, skia.Paint(AntiAlias=True, Color=rgba(AMBER, 0.08 * a)))
+        c.drawPath(path, skia.Paint(AntiAlias=True, Color=rgba(acc, 0.08 * a)))
         c.drawPath(path, skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=px * 2.0,
-                                    Color=rgba(AMBER, 0.75 * a)))
+                                    Color=rgba(acc, 0.75 * a)))
         c.clipPath(path, doAntiAlias=True)
         c.resetMatrix()
-        p = skia.Paint(AntiAlias=True, StrokeWidth=2.2, Color=rgba(AMBER, 0.42 * a))
+        p = skia.Paint(AntiAlias=True, StrokeWidth=2.2, Color=rgba(acc, 0.42 * a))
         for k in range(-H, W + H, 15):
             c.drawLine(k, 0, k + H, H, p)
         c.restore()
@@ -447,10 +470,9 @@ class Renderer:
                 if math.hypot(x, y) + r > R_MOON or (size < 300 and abs(x) < 30):
                     continue
                 c.drawCircle(x, y, r, skia.Paint(AntiAlias=True, Color=rgba((104, 104, 109))))
-                c.drawArc(skia.Rect(x - r, y - r, x + r, y + r), 100, 160, False, skia.Paint(
-                    AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=r * 0.16, Color=rgba((88, 88, 93))))
-                c.drawArc(skia.Rect(x - r, y - r, x + r, y + r), 280, 160, False, skia.Paint(
-                    AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=r * 0.1, Color=rgba((128, 128, 133))))
+                c.drawCircle(x - r * 0.12, y + r * 0.12, r * 0.86, skia.Paint(AntiAlias=True, Color=rgba((97, 97, 102))))
+                c.drawArc(skia.Rect(x - r, y - r, x + r, y + r), 290, 140, False, skia.Paint(
+                    AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=r * 0.05, Color=rgba((126, 126, 131))))
         c.restore()
 
     def _space_marks(self, c, cam, a):
@@ -486,8 +508,8 @@ class Renderer:
                 continue
             c.drawLine(sx, sy, sx + dx * 0.85, sy + dy * 0.85,
                        skia.Paint(AntiAlias=True, StrokeWidth=1.6, Color=rgba(INK, 0.55 * k)))
-            c.drawCircle(sx, sy, 5, skia.Paint(AntiAlias=True, Color=rgba(AMBER, k)))
-            draw_text(c, txt, f, sx + dx, sy + dy, color=AMBER, alpha=k, align="left" if dx >= 0 else "right",
+            c.drawCircle(sx, sy, 5, skia.Paint(AntiAlias=True, Color=rgba(self.pal["accent"], k)))
+            draw_text(c, txt, f, sx + dx, sy + dy, color=self.pal["accent"], alpha=k, align="left" if dx >= 0 else "right",
                       vcenter=True, tracking=1.5)
 
     def _shade(self, c):
@@ -522,29 +544,35 @@ class Renderer:
                 tag = f"DAY {int(days)}"
             else:
                 tag = f"YEAR {int(days / 365.25)}"
-        draw_text(c, tag, gfx.mono(28), x0, 318, color=AMBER, alpha=a, align="left", tracking=1)
+        acc = self.pal["accent"]
+        draw_text(c, tag, gfx.mono(28), x0, 318, color=acc, alpha=a, align="left", tracking=1)
         c.drawLine(x0, 346, x0 + 340, 346, skia.Paint(AntiAlias=True, StrokeWidth=1.5, Color=rgba(INK, 0.3 * a)))
 
         # KPI principale a destra, con la variazione rispetto alla base.
         label = _last(tl.kpi_label, vt, "")
         draw_text(c, label, small, x1, 140, color=INK, alpha=0.88 * a, align="right", tracking=1.5)
-        val = tl.kpi_value(vt)
-        s = st.kpi_format(val)
-        draw_text(c, s, big, x1, 226, color=INK, alpha=a, align="right")
+        val = st.kpi_fn(vt, tl) if st.kpi_fn else tl.kpi_value(vt)
+        if st.kpi_fmt:
+            s = st.kpi_fmt.format(val)
+            big = gfx.fit_mono(s, 560, 78)
+            draw_text(c, s, big, x1, 226, color=INK, alpha=a, align="right")
+        else:
+            s = st.kpi_format(val)
+            draw_text(c, s, big, x1, 226, color=INK, alpha=a, align="right")
         base = _last(tl.kpi_base, vt, st.kpi_base)
         pct = (val - base) / base * 100 if base else 0
         if abs(pct) >= 0.5:
             ptxt = f"{abs(pct):.0f}%"
             pf = gfx.mono(30, "Medium")
             vx = x1 - gfx.text_width(s, big) - 22
-            draw_text(c, ptxt, pf, vx, 222, color=AMBER, alpha=a, align="right")
+            draw_text(c, ptxt, pf, vx, 222, color=acc, alpha=a, align="right")
             tx = vx - gfx.text_width(ptxt, pf) - 26
             tri = skia.Path()
             if pct > 0:
                 tri.addPoly([skia.Point(tx - 9, 214), skia.Point(tx + 9, 214), skia.Point(tx, 198)], True)
             else:
                 tri.addPoly([skia.Point(tx - 9, 200), skia.Point(tx + 9, 200), skia.Point(tx, 216)], True)
-            c.drawPath(tri, skia.Paint(AntiAlias=True, Color=rgba(AMBER, a)))
+            c.drawPath(tri, skia.Paint(AntiAlias=True, Color=rgba(acc, a)))
         k2 = _last(tl.kpi2, vt)
         if k2:
             t2 = max(tt for tt, v in tl.kpi2 if tt <= vt)
@@ -556,11 +584,11 @@ class Renderer:
             draw_text(c, lab, small, x1, 276, color=INK, alpha=0.88 * a, align="right", tracking=1)
             if lab:
                 ax = x1 - lw - 22
-                c.drawLine(ax - 26, 266, ax, 266, skia.Paint(AntiAlias=True, StrokeWidth=2.2, Color=rgba(AMBER, a)))
+                c.drawLine(ax - 26, 266, ax, 266, skia.Paint(AntiAlias=True, StrokeWidth=2.2, Color=rgba(acc, a)))
                 arr = skia.Path()
                 arr.addPoly([skia.Point(ax + 2, 266), skia.Point(ax - 8, 259), skia.Point(ax - 8, 273)], True)
-                c.drawPath(arr, skia.Paint(AntiAlias=True, Color=rgba(AMBER, a)))
-            draw_text(c, v2, gfx.mono(38, "SemiBold"), x1, 326, color=AMBER, alpha=a, align="right", tracking=1)
+                c.drawPath(arr, skia.Paint(AntiAlias=True, Color=rgba(acc, a)))
+            draw_text(c, v2, gfx.mono(38, "SemiBold"), x1, 326, color=acc, alpha=a, align="right", tracking=1)
 
         # Barra di scala (solo in vista dall'alto).
         if cam.pitch < 3 and cam.w > 150:
@@ -596,8 +624,8 @@ class Renderer:
         y = CAPTION_Y - 70
         if cap["jump"]:
             n = int(age * CPS * 1.5)
-            draw_text(c, cap["jump"][:n], gfx.mono(34, "Medium"), x0, y, color=AMBER, alpha=out, align="left",
-                      tracking=1.5)
+            draw_text(c, cap["jump"][:n], gfx.mono(34, "Medium"), x0, y, color=self.pal["accent"], alpha=out,
+                      align="left", tracking=1.5)
         y += 76
         n = int(max(0.0, age - 0.25) * CPS)
         font = gfx.title(58)
@@ -616,20 +644,33 @@ class Renderer:
     def _caption_center(self, c, cam, cap, age, out):
         hook = cap["layout"] == "hook"
         # La domanda iniziale è piena già al primo frame (è anche la miniatura); le altre entrano in dissolvenza.
-        k_in = 1.0 if hook else ease_out(age / 0.45)
+        k_in = 1.0 if hook else min(1.0, age / 0.2)
         k = k_in * out
         if k <= 0:
             return
         font = gfx.title(76 if hook else 60)
         lines = _wrap(cap["text"], font, W - 2 * MARGIN - (40 if hook else 0))
         lh = 90 if hook else 74
-        y = (250 if hook else CAPTION_Y) + (1 - k_in) * 14
+        y = 250 if hook else CAPTION_Y
         shadow = skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.6 * k),
                             MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 9))
+        # Parola per parola: ognuna sale e compare 50 ms dopo la precedente (la domanda iniziale è già piena).
+        space = font.measureText(" ")
+        i = 0
         for line in lines:
-            w = font.measureText(line)
-            c.drawString(line, W / 2 - w / 2, y + 3, font, shadow)
-            draw_text(c, line, font, W / 2, y, color=(255, 255, 255), alpha=k)
+            words = line.split(" ")
+            x = W / 2 - font.measureText(line) / 2
+            for w in words:
+                kw = 1.0 if hook else ease_out((age - i * 0.05) / 0.28)
+                if kw > 0:
+                    yy = y + (1 - kw) * 16
+                    c.drawString(w, x, yy + 4, font, skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.45 * kw * out),
+                                                               MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 24)))
+                    c.drawString(w, x, yy + 3, font, skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.6 * kw * out),
+                                                               MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 9)))
+                    c.drawString(w, x, yy, font, skia.Paint(AntiAlias=True, Color=rgba((255, 255, 255), kw * out)))
+                x += font.measureText(w) + space
+                i += 1
             y += lh
         if cap["sub"]:
             ks = ease_in_out((age - 0.6) / 0.4) * out
@@ -642,7 +683,7 @@ class Renderer:
         if cap["point"]:
             sx, sy = cam.to_screen(*self.scene.anchor(cap["point"], cap["t0"] + age, self.tl))
             kp = ease_in_out((age - 0.5) / 0.5) * out
-            rr = 3.4 / cam.px  # cerchio un po' più grande di una macchina
+            rr = getattr(self.scene, "point_r", {}).get(cap["point"], 3.4) / cam.px  # raggio in metri del cerchio
             if kp > 0 and 0 < sx < W and y < sy - rr < H:
                 p = skia.Paint(AntiAlias=True, StrokeWidth=2, Color=rgba((255, 255, 255), 0.85 * kp))
                 top = y - 20

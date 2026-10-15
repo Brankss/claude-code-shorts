@@ -4,7 +4,8 @@ Il format `whatif` rifà in codice la struttura dei video "What if everyone on E
 
 ```bash
 python make.py --format whatif --episode 1 --out out/whatif_zipper.mp4            # storia 1: zipper merge
-python make.py --format whatif --episode 1 --stills 0.5,20,56 --out out/prev       # solo frame PNG per controllare
+python make.py --format whatif --episode 2 --out out/whatif_tiktok.mp4            # storia 2: tutti cancellano TikTok
+python make.py --format whatif --episode 2 --stills 0.5,17,44 --out out/prev       # solo frame PNG per controllare
 ```
 
 ## 1. Anatomia del video di riferimento (94 s)
@@ -50,6 +51,29 @@ Regole che non si toccano:
 - Il confronto finale è affiancato: le due code dopo 16 minuti, con la lunghezza. Con metà dei guidatori che si immette comunque presto per abitudine, la sim dà −40%, in linea col dato MnDOT.
 - I clacson nell'audio sono quelli della simulazione: suonano quando l'eroe sorpassa la coda e spariscono quando tutti si immettono presto.
 
+## 3b. Tutti cancellano TikTok (storia 2)
+
+"What if everyone on Earth deleted TikTok at the same time?" Più dopaminica dello zipper: il telefono è la prima cosa che si vede, chi guarda ha lo stesso gesto in mano, e la domanda tocca qualcosa che tutti hanno pensato almeno una volta.
+
+| Tempo | Cosa succede |
+|---|---|
+| 0-2.6 s | Primo piano sul telefono che scrolla (video veri disegnati, UI, swipe). Hook sopra. Contatore "HOURS SCROLLED TODAY" che corre |
+| 2.6-11 s | Dormitorio a Chicago, 2:47 di notte. "He said 'one more video.' Three hours ago." |
+| 11-14 s | Tieni premuto l'icona, "Delete app?", tap, l'icona esplode, lo schermo si spegne, il telefono va a faccia in giù. Il contatore si blocca |
+| 15.7-17 s | Fuori dalla stanza: tutto il dormitorio. Alle 17.0 tutte le luci blu dei telefoni si spengono insieme (flash + shake) |
+| 18.8-37 s | Escalation: campus (+1 settimana) → Chicago (+1 mese) → USA (+6 mesi) → Terra (+1 anno) → Luna (+8 anni, "Nobody films it vertically.") |
+| 40.2 s | Rewind fino alla stanza |
+| 42.4-55 s | Twist vero: griglia di 1.000 telefoni, "$55 per smettere da soli", "$24 PAGATI perché smettano tutti", "58% preferisce un mondo senza" |
+| 55.2-59.4 s | Di nuovo sul telefono che scrolla: "Everyone wants out. Nobody leaves first." Il finale è il primo frame: loop |
+
+- **Fonte del twist**: Bursztyn, Handel, Jiménez-Durán, Roth, "When Product Markets Become Collective Traps: The Case of Social Media" (NBER WP 31771; American Economic Review 2025). Oltre 1.000 studenti universitari USA che usano TikTok: per disattivarlo da soli chiedevano circa $55; se lo disattivassero tutti, pagherebbero circa $24 perché succeda; il 58% preferirebbe un mondo senza TikTok.
+- **La parte inventata** (sonno, libri, Luna) sta tutta nel blocco con i salti di tempo nel futuro; i numeri del contatore principale sono una stima (~1 miliardo di ore al giorno nel mondo) e non vengono citati come dato.
+- **Il KPI è una funzione** (`kpi_fn`): corre col tempo reale, si ferma quando tutti cancellano, poi conta le ore restituite; nel rewind torna alla realtà.
+- **Palette notturna** (`palette`): mare e terra più scuri, accento caldo, così la mappa continua l'atmosfera della stanza.
+- La scena è `shorts/dorm.py`: stanza, telefono con 12 video procedurali e UI, dormitorio, campus, griglia di Chicago, Luna con astronauti, infografica dello studio. Ha anche l'audio suo (musica dal telefono, swipe, tap, room tone).
+- Mappe: Natural Earth + laghi di OpenStreetMap (ODbL, attribuzione nella descrizione).
+- **Audio livellato**: la stanza silenziosa dell'inizio era 15 dB sotto le mappe, e l'inizio è proprio la parte che deve agganciare. Il master passa da un livellatore lento (`whatif_audio.leveler`) che riduce la differenza a circa 10 dB senza toccare il loop.
+
 ## 4. Come si scrive una nuova storia
 
 Una storia è una funzione in `shorts/stories.py` che restituisce `(Story, scena, stats)` e va aggiunta a `STORIES`. La storia è una lista di `Beat`: ogni beat cambia solo quello che gli serve, il resto prosegue dal beat prima.
@@ -65,11 +89,13 @@ Una storia è una funzione in `shorts/stories.py` che restituisce `(Story, scena
 | `kpi`, `kpi_label`, `kpi_base`, `kpi2` | contatore principale con variazione %, metrica secondaria |
 | `spread`, `hatch` | onda che si allarga sulla mappa (km) e regioni tratteggiate (stati USA, paesi) |
 | `scene`, `split` | quale registrazione mostrare e confronto affiancato |
-| `fx` | `"rewind"` o `"hit"` (colpo basso nell'audio) |
+| `fx`, `fx_dur` | `"rewind"`, `"hit"` (colpo basso nell'audio), `"flash"` (lampo bianco), `"shake"` (scossone della scena) e quanto durano |
 
-Tempi che funzionano: un beat ogni 3.5-4.5 s, movimenti di camera da 2-2.6 s, video tra 60 e 75 s.
+Campi della `Story` oltre ai soliti: `palette` (colori di mare, terra, confini, accento), `kpi_fn(vt, tl)` per un contatore che non è una semplice interpolazione, `kpi_fmt` per formattarlo (es. `"{:,.0f}"`).
 
-La scena è l'unica parte specifica di ogni storia: deve saper disegnarsi (`draw`) e dare la posizione delle ancore (`anchor`). La mappa, il globo, lo spazio, l'HUD, il rewind e l'audio sono già pronti.
+Tempi che funzionano: un beat ogni 3-4 s (nella storia TikTok anche meno all'inizio), movimenti di camera da 1-2.4 s, video tra 55 e 75 s. Qualcosa deve cambiare sullo schermo almeno ogni 2-3 s.
+
+La scena è l'unica parte specifica di ogni storia: deve saper disegnarsi (`draw`) e dare la posizione delle ancore (`anchor`). Opzionali: `bind(renderer)` per avere l'atlante, `point_r` (raggio del puntatore per ancora), `near_log10` (fino a che zoom si sente l'audio "vicino") e `audio(mx, r, ts, near, rng)` per i suoni della scena. La mappa, il globo, lo spazio, l'HUD, il rewind e l'audio di base sono già pronti.
 
 ## 5. Idee per i prossimi video (twist verificati)
 

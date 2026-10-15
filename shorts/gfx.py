@@ -55,6 +55,13 @@ BG = (17, 17, 21)
 INK = (236, 236, 240)
 
 
+def fit_mono(s, max_w, size, weight="Medium"):
+    """Mono che entra in max_w px (numeri lunghi del KPI)."""
+    while size > 20 and mono(size, weight).measureText(s) > max_w:
+        size -= 2
+    return mono(size, weight)
+
+
 def fit_font(maker, s, max_w, size):
     while size > 10 and maker(size).measureText(s) > max_w:
         size -= 2

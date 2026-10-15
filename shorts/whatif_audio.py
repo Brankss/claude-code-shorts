@@ -92,8 +92,19 @@ def rewind(d, rng):
     return x * env * 0.5
 
 
-def _env(ts, vals, n):
+def env(ts, vals, n):
     return np.interp(np.arange(n) / SR, ts, vals)
+
+
+def loop_bed(sig_fn, n, level_ts, level, rng):
+    """Ambiente lungo tutto il video più un secondo, che rientra in dissolvenza all'inizio (loop senza stacchi)."""
+    m = n + SR
+    x = sig_fn(m, rng)
+    e = np.concatenate([env(level_ts, level, n), np.full(SR, level[-1])])
+    fade = np.ones(m)
+    fade[:SR] = np.linspace(0, 1, SR)
+    fade[n:] = np.linspace(1, 0, SR)
+    return x * e * fade
 
 
 def build(r):
@@ -105,36 +116,24 @@ def build(r):
 
     # Inviluppi di ambiente dalla camera (50 al secondo).
     ts = np.arange(0, D + 0.02, 0.02)
-    road, mid, space = np.zeros(len(ts)), np.zeros(len(ts)), np.zeros(len(ts))
+    near, mid, space = np.zeros(len(ts)), np.zeros(len(ts)), np.zeros(len(ts))
     for i, vt in enumerate(ts):
         cam = tl.camera(min(vt, D - 1e-3))
         lw = math.log10(cam.w)
         _, _, where = tl.scene_state(vt)
-        road[i] = np.clip(1 - (lw - 2.2) / 1.6, 0, 1) * (where == "earth")
+        # near: quanto è vicina la scena (1 = a livello strada/stanza), per i suoni d'ambiente
+        near[i] = np.clip(1 - (lw - r.scene.near_log10) / 1.6, 0, 1) * (where == "earth")
         space[i] = max(float(np.clip((lw - 7.2) / 1.0, 0, 1)), 0.8 * (where == "moon"))
         mid[i] = np.clip((lw - 2.6) / 1.2, 0, 1) * (1 - space[i])
 
-    # Rombo del traffico: rumore marrone filtrato + fruscio di gomme, un secondo in più per il loop.
-    m = n + SR
-    brown = np.cumsum(rng.normal(0, 1, m))
-    brown = _hp(brown, 25)
-    brown /= np.abs(brown).max()
-    amb = _lp(brown, 380) * 1.4 + 0.10 * _bp(rng.normal(0, 1, m), 700, 2600)
-    amb *= 1 + 0.25 * np.sin(2 * np.pi * np.arange(m) / SR / 7.3)
-    e = np.concatenate([_env(ts, road, n), np.full(SR, road[-1])])
-    fade = np.ones(m)
-    fade[:SR] = np.linspace(0, 1, SR)
-    fade[n:] = np.linspace(1, 0, SR)
-    mx.add(0.0, amb * e * fade * 0.55, reverb=0.05)
-
     # Pad dell'escalation e bordone dello spazio (stessa tonalità: Re minore).
     pad = A.pad([A.note(50), A.note(57), A.note(62), A.note(65)], D, attack=0.01, release=0.01, cutoff=1100)[:n]
-    mx.add(0.0, pad * _env(ts, mid, len(pad)) * 0.9, reverb=0.35)
+    mx.add(0.0, pad * env(ts, mid, len(pad)) * 0.9, reverb=0.35)
     t = np.arange(n) / SR
     drone = sum(np.sin(2 * np.pi * A.note(n0) * t + ph) * g
                 for n0, g, ph in ((74, 0.5, 0), (81, 0.3, 1.3), (86, 0.18, 2.1), (93, 0.08, 0.7)))
     drone *= 0.75 + 0.25 * np.sin(2 * np.pi * t / 5.0)
-    mx.add(0.0, drone * _env(ts, space, n) * 0.22, reverb=0.6)
+    mx.add(0.0, drone * env(ts, space, n) * 0.22, reverb=0.6)
 
     # Campane: una a ogni salto di tempo, ogni volta più acuta.
     steps = [62, 65, 69, 72, 74, 77, 81]
@@ -164,26 +163,9 @@ def build(r):
             for i in range(0, len(val[0]) + len(val[1]), 2):
                 mx.add(t0 + i / (CPS * 1.4), tick(rng), 0.035, pan=0.4, reverb=0.05)
 
-    # Clacson e freccia, presi dalla simulazione mentre la strada è in vista.
-    scene = r.scene
-    last = None
-    for i, vt in enumerate(ts[:-1]):
-        rec, ts_sim, where = tl.scene_state(vt)
-        if road[i] < 0.3 or where != "earth":
-            last = None
-            continue
-        if last is not None and last[0] == rec and 0 < ts_sim - last[1] < 0.1:
-            for ht, _ in scene.recs[rec].honks:
-                if last[1] < ht <= ts_sim:
-                    mx.add(vt, horn(rng.uniform(0.18, 0.4), rng.uniform(370, 450)), 0.32 * road[i],
-                           pan=rng.uniform(0.1, 0.5), reverb=0.12)
-            sw = scene.switch_sim
-            if rec == "A" and sw is not None:
-                for j in range(12):
-                    tk = sw - 0.3 + j / 4.8
-                    if last[1] < tk <= ts_sim and tk < sw + 3.8:
-                        mx.add(vt, click(2400 if j % 2 == 0 else 1700), 0.12, pan=0.1, reverb=0.02)
-        last = (rec, ts_sim)
+    # Suoni della scena (traffico e clacson, stanza e telefono...): li sa fare la scena stessa.
+    if hasattr(r.scene, "audio"):
+        r.scene.audio(mx, r, ts, near, rng)
 
     # Rewind e colpi.
     for t0, kind, d in tl.fx:
@@ -191,4 +173,27 @@ def build(r):
             mx.add(t0, rewind(d, rng), 0.35, reverb=0.25)
         elif kind == "hit":
             mx.add(t0, boom(), 0.7, reverb=0.3)
-    return mx.master()
+        elif kind == "shake":
+            mx.add(t0, boom(1.2), 0.55, reverb=0.25)
+    return leveler(mx.master())
+
+
+def leveler(x, target_db=-19.0, amount=0.55, max_up=9.0, max_down=6.0):
+    """Livellatore lento: avvicina il volume medio (finestra ~1.5 s) a target_db, così la stanza silenziosa
+    dell'inizio non è 15 dB sotto le mappe. Circolare, per non rompere il loop; poi limitatore morbido."""
+    hop = SR // 20
+    nf = len(x) // hop
+    mono = x[: nf * hop].mean(1) if x.ndim > 1 else x[: nf * hop]
+    rms = np.sqrt((mono.reshape(nf, hop) ** 2).mean(1) + 1e-12)
+
+    def smooth(v, sec):
+        k = max(1, int(sec * 20))
+        pad = np.concatenate([v[-k:], v, v[:k]])
+        return np.convolve(pad, np.ones(k) / k, mode="same")[k:-k]
+
+    db = 20 * np.log10(smooth(rms, 1.5) + 1e-9)
+    g_db = smooth(np.clip((target_db - db) * amount, -max_down, max_up), 0.5)
+    g = 10 ** (np.interp(np.arange(len(x)) / hop, np.arange(nf) + 0.5, g_db) / 20)
+    y = x * (g[:, None] if x.ndim > 1 else g)
+    y = np.tanh(y / 0.9) * 0.9
+    return y / max(1e-9, np.abs(y).max()) * 0.89
