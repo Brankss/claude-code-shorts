@@ -48,13 +48,16 @@ class Beat:
     clock: str = None             # "6:42 AM"; "" nasconde l'HUD; None = invariato
     card: dict = None             # {"kind": "rule"|"title"|"question", ...}
     cut: str = "cut"              # come entra: cut | fade | black | flash
-    hold: float = 0.15            # silenzio dopo la battuta (o durata del beat se è muto)
+    hold: float = 0.06            # silenzio dopo la battuta (o durata del beat se è muto)
     sfx: tuple = ()               # (("knock", 0.3), ...) secondi dall'inizio del beat
     fx: tuple = ()                # (("shake", 0.2, 14), ("flash", 0.0, (255, 40, 40)))
     params: dict = field(default_factory=dict)
     music: float = None           # tensione 0..1 della musica (None = invariata)
     caption: bool = True          # False: niente didascalia (il testo è già sullo schermo)
     voice: str = None             # voce diversa per questa battuta (es. la "mamma" lontana)
+    pitch: float = None           # semitoni per questa battuta (None = quelli della storia)
+    last_pitch: float = None      # semitoni per l'ultimo pezzo (dopo l'ultimo "..."): una parola "sbagliata"
+    last_delay: float = 0.0       # ritardo in più prima dell'ultimo pezzo
     filt: str = None              # effetto sulla voce: door | far | speaker | glass (None = quello della storia)
     name: str = None              # cartellino: nome di chi parla (None = story.char_name)
     tag: str = None               # cartellino: dove ("THROUGH THE GLASS")
@@ -71,9 +74,10 @@ class Story:
     beats: list
     scenes: dict                  # nome -> funzione(c, s, beat, R)
     narrator: str = "am_michael*0.6+am_onyx*0.4"
-    speed: float = 0.98
+    speed: float = 1.22
     char_voice: str = "bm_george"
     char_speed: float = 1.0
+    char_pitch: float = 0.0       # semitoni (es. +2.5 per una bambina partendo da una voce adulta)
     char_name: str = ""
     char_tag: str = ""            # "THROUGH THE DOOR"
     char_filter: str = None       # "door" | "speaker" | None
@@ -84,6 +88,18 @@ class Story:
 
 
 # ---------- timeline ----------
+
+def _tight(audio, words, tail=0.07):
+    """Taglia il silenzio in coda alla battuta (Kokoro lascia ~0.4 s di respiro): i tagli restano serrati."""
+    loud = np.where(np.abs(audio) > 0.012)[0]
+    end = len(audio) if not len(loud) else min(len(audio), loud[-1] + int(tail * voice.SR))
+    end = max(end, int((words[-1].end + 0.03) * voice.SR) if words else end)
+    out = audio[:end].copy()
+    n = min(len(out), int(0.03 * voice.SR))
+    if n:
+        out[-n:] *= np.linspace(1, 0, n)
+    return out
+
 
 def _takes(text):
     """Spezza la battuta dopo ogni '...': ogni pezzo si sintetizza a parte e la pausa la mettiamo noi."""
@@ -141,12 +157,18 @@ class Timeline:
                      "shot": len(self.shots) - 1, "hud": hud}
             v, sp = (story.narrator, story.speed) if b.who == "narrator" else (story.char_voice, story.char_speed)
             v = b.voice or v
+            pitch = b.pitch if b.pitch is not None else (story.char_pitch if b.who == "char" else 0.0)
             filt = b.filt if b.filt is not None else (story.char_filter if b.who == "char" else None)
-            for take in _takes(b.text):
-                words, audio = voice.say(take, v, sp)
+            takes = _takes(b.text)
+            for ti, take in enumerate(takes):
+                last = ti == len(takes) - 1 and len(takes) > 1
+                if last and b.last_delay:
+                    t += b.last_delay
+                words, audio = voice.say(take, v, sp, pitch=b.last_pitch if last and b.last_pitch is not None else pitch)
+                audio = _tight(audio, words)
                 entry["takes"].append((t, audio, b.who, filt))
                 entry["words"] += [voice.Word(w.text, t + w.start, t + w.end) for w in words]
-                t += len(audio) / voice.SR + (0.42 if take.endswith("...") else 0.1)
+                t += len(audio) / voice.SR + (0.24 if take.endswith("...") else 0.05)
             t += b.hold
             entry["t1"] = t
             self.shots[-1]["t1"] = t
@@ -185,6 +207,8 @@ class Renderer:
         e = {"inout": gfx.ease_in_out, "out": gfx.ease_out, "lin": lambda x: x}[cam.get("ease", "inout")](k)
         z0, z1 = cam.get("z", (1.0, 1.06))
         (x0, y0), (x1, y1) = cam.get("c", ((540, 960), (540, 960)))
+        r0, r1 = cam.get("r", (0.0, 0.0))
+        self.cam_rot = r0 + (r1 - r0) * e
         return z0 + (z1 - z0) * e, x0 + (x1 - x0) * e, y0 + (y1 - y0) * e
 
     def _scene(self, c, idx, t):
@@ -192,6 +216,7 @@ class Renderer:
         shot = self.tl.shots[entry["shot"]]
         s = t - shot["t0"]
         self.t, self.bs, self.shot, self.entry = t, t - entry["t0"], shot, entry
+        self.ss = s
         z, cx, cy = self._cam(shot, s)
         # camera a mano: una deriva lentissima, così nessuna inquadratura è mai ferma
         sway = shot["cam"].get("sway", 1.0)
@@ -206,6 +231,8 @@ class Renderer:
         c.save()
         c.translate(W / 2 + dx, H / 2 + dy)
         c.scale(z, z)
+        if self.cam_rot:
+            c.rotate(self.cam_rot)
         c.translate(-cx, -cy)
         fn = self.story.scenes.get(entry["scene"])
         if fn is None:
@@ -240,6 +267,14 @@ class Renderer:
         img = self.surface.makeImageSnapshot()
         return img.toarray(colorType=skia.kRGBA_8888_ColorType)
 
+    def word(self, needle, entry=None, end=False):
+        """Secondi dall'inizio del beat in cui viene detta la prima parola che contiene needle (None se non c'è)."""
+        entry = entry or self.entry
+        for w in entry["words"]:
+            if needle.lower() in w.text.lower():
+                return (w.end if end else w.start) - entry["t0"]
+        return None
+
     # --- HUD: giorno, ora, luogo ---
 
     def _hud(self, c, idx, t):
@@ -247,7 +282,7 @@ class Renderer:
         if not entry["clock"]:
             return
         j, card = self._active_card(idx)
-        if card and card["kind"] == "title" and t - self.tl.beats[j]["t0"] < card.get("dur", 2.2):
+        if card and card["kind"] == "title" and not card.get("hud") and t - self.tl.beats[j]["t0"] < card.get("dur", 2.2):
             return   # il titolo della serie occupa la parte alta, come nel riferimento
         s = t - entry["t0"]
         a = min(1.0, s / 0.25) if idx == 0 or not self.tl.beats[idx - 1]["clock"] else 1.0
@@ -272,14 +307,17 @@ class Renderer:
         yy = y + 162
         for line in entry["hud"]:
             txt, col = line[0], line[1]
-            if len(line) > 3 and s >= line[2]:
-                g = s - line[2]
-                if g < 0.35 and int(g * 30) % 2 == 0:
-                    gfx.draw_text(c, txt, gfx.mono(22, "Medium"), x + 6 * math.sin(g * 90), yy, color=(255, 60, 60),
-                                  alpha=a, align="left", tracking=3)
-                    yy += 32
-                    continue
-                txt, col = line[3], line[4] if len(line) > 4 else (255, 80, 70)
+            if len(line) > 3:
+                at = line[2] if not isinstance(line[2], str) else (self.word(line[2][1:], entry) or 0.0)
+                back = line[5] if len(line) > 5 else None
+                if s >= at and (back is None or s < at + back):
+                    g = s - at
+                    if g < 0.3 and int(g * 30) % 2 == 0:
+                        gfx.draw_text(c, txt, gfx.mono(22, "Medium"), x + 6 * math.sin(g * 90), yy, color=(255, 60, 60),
+                                      alpha=a, align="left", tracking=3)
+                        yy += 32
+                        continue
+                    txt, col = line[3], line[4] if len(line) > 4 else (255, 80, 70)
             gfx.draw_text(c, txt, gfx.mono(22, "Medium"), x, yy, color=col, alpha=a, align="left", tracking=3)
             yy += 32
 
@@ -309,25 +347,40 @@ class Renderer:
             a = min(1.0, s / 0.25) * (1 - gfx.ease_in_out((s - dur + 0.4) / 0.4))
             if a <= 0:
                 return
-            gfx.draw_text(c, self.story.day, K.bold(30), W / 2, 330, color=(235, 90, 80), alpha=a * 0.9, tracking=8)
-            f = bebas(196)
-            sc = 1.06 - 0.06 * gfx.ease_out(s / 0.6)
+            ty = card.get("y", 470)
+            if not card.get("hud"):
+                gfx.draw_text(c, self.story.day, K.bold(30), W / 2, ty - 140, color=(235, 90, 80), alpha=a * 0.9, tracking=8)
+            f = bebas(card.get("size", 196))
+            sc = 1.08 - 0.08 * gfx.ease_out(s / 0.25)
             c.save()
-            c.translate(W / 2, 470)
+            c.translate(W / 2 + (2 * math.sin(s * 90) if s < 0.3 else 0), ty)
             c.scale(sc, sc)
             glow = skia.Paint(AntiAlias=True, Color=rgba((255, 120, 70), 0.55 * a),
                               MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 26))
             w = f.measureText(self.story.title)
+            c.drawString(self.story.title, -w / 2, 0, f, skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style,
+                                                                     StrokeWidth=8, Color=rgba((0, 0, 0), 0.7 * a)))
             c.drawString(self.story.title, -w / 2, 0, f, glow)
             c.drawString(self.story.title, -w / 2, 0, f, skia.Paint(AntiAlias=True, Color=rgba(WHITE, a)))
             c.restore()
+        elif kind == "banner":
+            k = gfx.ease_out(s / 0.3)
+            y = 470 - 140 * (1 - k)
+            r = skia.RRect.MakeRectXY(skia.Rect(60, y, W - 60, y + 150), 34, 34)
+            c.drawRRect(r, skia.Paint(AntiAlias=True, Color=rgba((120, 22, 26), 0.95 * k)))
+            c.drawRRect(r, skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=3,
+                                      Color=rgba((255, 120, 100), 0.8 * k)))
+            gfx.draw_text(c, card.get("title", "ALERT"), K.heavy(30), 100, y + 52, color=(255, 150, 130), alpha=k,
+                          align="left", tracking=2)
+            f = gfx.fit_font(K.heavy, card["text"], W - 200, 50)
+            gfx.draw_text(c, card["text"], f, 100, y + 112, color=WHITE, alpha=k, align="left")
         elif kind == "question":
             k = gfx.ease_out(s / 0.3)
             f = bebas(150)
             text = card["text"]
             sc = 0.9 + 0.1 * K.back_out(s / 0.35)
             c.save()
-            c.translate(W / 2, 560)
+            c.translate(W / 2, 640)
             c.scale(sc, sc)
             w = f.measureText(text)
             if w > 980:
@@ -338,7 +391,7 @@ class Renderer:
             c.restore()
             if card.get("sub"):
                 ks = gfx.ease_out((s - card.get("sub_at", 0.8)) / 0.3)
-                gfx.draw_text(c, card["sub"], K.bold(34), W / 2, 650, color=(235, 235, 235), alpha=ks, tracking=3)
+                gfx.draw_text(c, card["sub"], K.bold(36), W / 2, 730, color=(235, 235, 235), alpha=ks, tracking=3)
 
     def _rule(self, c, card, s, t):
         """RULE #n in rosso, poi il testo enorme con sottolineatura; dopo un po' si rimpicciolisce e resta."""

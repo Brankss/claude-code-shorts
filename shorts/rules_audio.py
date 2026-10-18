@@ -44,12 +44,14 @@ def buzz(d=1.6, rng=None):
 
 
 def alert(d=2.6):
-    """Il segnale d'attenzione delle allerte d'emergenza: 853 Hz + 960 Hz insieme, a impulsi."""
+    """Allarme del telefono, inventato: due note stridenti e stonate a raffiche brevi. Non è il segnale
+    d'attenzione delle allerte reali (853+960 Hz), che fuori da un'emergenza vera non si può usare."""
     t = _t(d)
-    x = np.sin(2 * np.pi * 853 * t) + np.sin(2 * np.pi * 960 * t)
-    pat = ((t % 1.0) < 0.8).astype(float)
-    pat = _f(pat, "low", 120)
-    return 0.4 * x * pat
+    x = np.sign(np.sin(2 * np.pi * 698 * t)) * 0.5 + np.sign(np.sin(2 * np.pi * 1046 * t + 0.3)) * 0.35
+    x += 0.4 * np.sin(2 * np.pi * 1397 * t)
+    pat = (((t % 0.5) < 0.18) | (((t % 0.5) > 0.24) & ((t % 0.5) < 0.38))).astype(float)
+    pat = _f(pat, "low", 150)
+    return 0.3 * _f(x, "band", [400, 4000]) * pat
 
 
 def knock(n=3, gap=0.32, hard=1.0, rng=None):
@@ -211,7 +213,24 @@ def unplug():
     return x
 
 
+def tape(rng=None):
+    """Nastro adesivo strappato dal rotolo."""
+    rng = rng or np.random.default_rng(16)
+    t = _t(0.7)
+    x = _f(rng.normal(0, 1, len(t)), "band", [1500, 7000]) * (rng.random(len(t)) > 0.6)
+    return 0.6 * x * np.minimum(1, t / 0.05) * np.minimum(1, (0.7 - t) / 0.1)
+
+
+def static(d=3.0, rng=None):
+    rng = rng or np.random.default_rng(17)
+    t = _t(d)
+    return 0.35 * _f(rng.normal(0, 1, len(t)), "band", [300, 6000]) * np.minimum(1, t / 0.05)
+
+
 SFX = {
+    "tape": lambda rng: tape(rng),
+    "static": lambda rng: static(3.0, rng),
+    "power_off": lambda rng: np.concatenate([A.bell(A.note(84), 0.25) * 0.5, A.bell(A.note(77), 0.4) * 0.5]),
     "tap": lambda rng: tap(1.0, rng),
     "tap_soft": lambda rng: tap(0.5, rng),
     "tap_hard": lambda rng: tap(1.6, rng),
@@ -347,7 +366,20 @@ def echo_wrong(tl):
         return np.zeros(1)
     a = resample_poly(last, SR, voice.SR)
     a = resample_poly(a, 9, 8)                      # 12% più lenta e più grave
-    return far(a) * 0.9
+    return speaker(a) * 1.8                         # esce dalla cassa staccata
+
+
+def echo_word(entry, word):
+    """Una parola appena detta dal narratore che torna da fuori, più grave e lontana."""
+    for w in entry["words"]:
+        if word.lower() in w.text.lower():
+            for t0, aud, who, filt in entry["takes"]:
+                i0, i1 = int((w.start - t0) * voice.SR), int((w.end - t0 + 0.05) * voice.SR)
+                if 0 <= i0 < len(aud) and i1 <= len(aud) + voice.SR:
+                    seg = resample_poly(aud[i0:i1], SR, voice.SR)
+                    seg = resample_poly(seg, 6, 5)       # più lenta e più grave
+                    return far(seg) * 0.8, w.end + 0.35
+    return np.zeros(1), 0.0
 
 
 def build(r):
@@ -383,8 +415,24 @@ def build(r):
         b = e["beat"]
         for item in b.sfx:
             name, off = item[0], item[1]
+            if isinstance(off, str):          # "@parola": quando viene detta (+ eventuale ritardo dopo il segno +)
+                word, _, extra = off[1:].partition("+")
+                hit = next((w for w in e["words"] if word.lower() in w.text.lower()), None)
+                off = (hit.start - e["t0"] if hit else 0.0) + (float(extra) if extra else 0.0)
+            if name.startswith("say:"):       # voce lontana nella nebbia: "say:voce:testo"
+                _, vid, text = name.split(":", 2)
+                words, aud = voice.say(text, vid, 0.95)
+                sig = far(resample_poly(aud, SR, voice.SR))
+                gain = item[2] if len(item) > 2 else 0.35
+                pan = item[3] if len(item) > 3 else float(rng.uniform(-0.6, 0.6))
+                mx.add(e["t0"] + off, sig, gain, pan=pan, reverb=0.5)
+                continue
             gain = item[2] if len(item) > 2 else 0.5
             pan = item[3] if len(item) > 3 else float(rng.uniform(-0.2, 0.2))
+            if name.startswith("echo:"):
+                sig, at = echo_word(e, name[5:])
+                mx.add(at, sig, gain, pan=0.5, reverb=0.4)
+                continue
             sig = echo_wrong(tl) if name == "echo_last" else SFX[name](rng)
             mx.add(e["t0"] + off, sig, gain, pan=pan, reverb=0.25)
         card = b.card or {}

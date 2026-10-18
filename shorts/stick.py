@@ -41,7 +41,12 @@ POSES = {
     "kneel": dict(torso=20, head=-6, lsh=50, lel=30, rsh=70, rel=10, lhip=95, lkn=-95, rhip=0, rkn=-90),
     "flashlight": dict(torso=4, head=-4, lsh=10, lel=10, rsh=88, rel=4, lhip=6, lkn=0, rhip=-6, rkn=0),
     "wave": dict(torso=0, head=-6, lsh=6, lel=4, rsh=150, rel=-30, lhip=4, lkn=0, rhip=-4, rkn=0),
-    "listen": dict(torso=-4, head=-28, lsh=4, lel=2, rsh=-4, rel=-2, lhip=3, lkn=0, rhip=-3, rkn=0),
+    "listen": dict(torso=-4, head=-38, lsh=4, lel=2, rsh=-4, rel=-2, lhip=3, lkn=0, rhip=-3, rkn=0),
+    "sit_couch": dict(torso=-6, head=8, lsh=30, lel=96, rsh=26, rel=100, lhip=92, lkn=-88, rhip=86, rkn=-84),
+    "sit_shush": dict(torso=-4, head=4, lsh=34, lel=96, rsh=14, rel=150, lhip=92, lkn=-88, rhip=86, rkn=-84),
+    "sit_watch": dict(torso=8, head=-2, lsh=40, lel=60, rsh=46, rel=56, lhip=92, lkn=-90, rhip=86, rkn=-86),
+    "kneel_reach": dict(torso=38, head=-14, lsh=88, lel=8, rsh=74, rel=14, lhip=95, lkn=-95, rhip=10, rkn=-96),
+    "cover": dict(torso=-4, head=-14, lsh=150, lel=10, rsh=162, rel=-6, lhip=6, lkn=0, rhip=-6, rkn=0),
     "knock": dict(torso=4, head=-4, lsh=6, lel=4, rsh=80, rel=70, lhip=4, lkn=0, rhip=-4, rkn=0),
 }
 

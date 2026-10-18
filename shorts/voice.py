@@ -34,6 +34,7 @@ MODEL_PKG = ("kokoro-q8-shards", "1.0.0")
 VOICES_PKG = ("kokoro-local-runtime", "0.1.0")
 MODEL_SHA256 = "fbae9257e1e05ffc727e951ef9b9c98418e6d79f1c9b6b13bd59f5c9028a1478"
 DURATION_NODE = "/encoder/Cast_output_0"   # durate intere per fonema (dopo Round e Clip)
+PAUSES = (0.12, 0.04)                      # pausa dopo il punto e dopo la virgola (le pause lunghe le fa "...")
 
 
 @dataclass
@@ -143,17 +144,26 @@ def _words(text, timings, n):
     return [Word(w, float(edges[i]), float(edges[i + 1])) for i, w in enumerate(tokens)]
 
 
-def say(text, voice, speed=1.0, cache=True):
-    """(parole con tempi, audio float32 a 24 kHz) per una battuta. Con cache su disco."""
-    key = hashlib.sha1(json.dumps([text, voice, speed, MODEL_SHA256]).encode()).hexdigest()[:20]
+def say(text, voice, speed=1.0, cache=True, pitch=0.0):
+    """(parole con tempi, audio float32 a 24 kHz) per una battuta. Con cache su disco.
+
+    pitch (semitoni): sintetizza più lento e poi accelera, così la durata resta quella giusta e la voce
+    sale (serve per una voce di bambina partendo da una voce adulta)."""
+    if pitch:
+        from scipy.signal import resample_poly
+        p = 2 ** (pitch / 12)
+        words, audio = say(text, voice, speed / p, cache)
+        audio = resample_poly(audio, 1000, int(round(1000 * p))).astype(np.float32)
+        return [Word(w.text, w.start / p, w.end / p) for w in words], audio
+    key = hashlib.sha1(json.dumps([text, voice, speed, MODEL_SHA256, PAUSES]).encode()).hexdigest()[:20]
     path = CACHE / "lines" / f"{key}.npz"
     if cache and path.exists():
         d = np.load(path, allow_pickle=False)
         words = [Word(str(w), float(s), float(e)) for w, s, e in zip(d["w"], d["s"], d["e"])]
         return words, d["audio"]
     k = engine()
-    audio, sr, timings = k.create_timed(text, voice=style(voice), speed=speed, sentence_pause=0.32,
-                                        clause_pause=0.14)
+    audio, sr, timings = k.create_timed(text, voice=style(voice), speed=speed, sentence_pause=PAUSES[0],
+                                        clause_pause=PAUSES[1])
     assert sr == SR
     audio = audio.astype(np.float32)
     words = _words(text, timings, len(audio))

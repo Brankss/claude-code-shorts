@@ -46,21 +46,22 @@ def text(c, s, x, y, font, col, a=1.0, align="left"):
 
 # ---------- stanza ----------
 
-def room(c, wall, floor, horizon=1260, plank=None, base=None, ceiling=None):
-    """Interno visto di lato: parete di fondo, battiscopa, pavimento in prospettiva con assi."""
-    vgrad(c, 0, 0, W, horizon, mix(wall, (0, 0, 0), 0.25), wall)
+def room(c, wall, floor, horizon=1260, plank=None, base=None, ceiling=None, x0=0, x1=W, y0=0, y1=H):
+    """Interno visto di lato: parete di fondo, battiscopa, pavimento in prospettiva con assi.
+    x0..x1 / y0..y1: quanto è grande la stanza (per le camere che si spostano oltre lo schermo)."""
+    vgrad(c, x0, y0, x1, horizon, mix(wall, (0, 0, 0), 0.25), wall)
     if ceiling:
-        vgrad(c, 0, 0, W, 160, ceiling, wall, a=0.9)
-    rect(c, 0, horizon - 22, W, horizon, base or mix(wall, (0, 0, 0), 0.35))
-    vgrad(c, 0, horizon, W, H, mix(floor, (255, 255, 255), 0.04), mix(floor, (0, 0, 0), 0.35))
+        vgrad(c, x0, y0, x1, y0 + 160, ceiling, wall, a=0.9)
+    rect(c, x0, horizon - 22, x1, horizon, base or mix(wall, (0, 0, 0), 0.35))
+    vgrad(c, x0, horizon, x1, y1, mix(floor, (255, 255, 255), 0.04), mix(floor, (0, 0, 0), 0.35))
     line = P(plank or mix(floor, (0, 0, 0), 0.22), 0.7, StrokeWidth=3)
-    vx = W / 2
-    for i in range(-9, 10):
-        x = vx + i * 150
-        c.drawLine(vx + i * 60, horizon, x * 1.0 + i * 260, H, line)
+    vx = (x0 + x1) / 2
+    n = int((x1 - x0) / 120)
+    for i in range(-n, n + 1):
+        c.drawLine(vx + i * 60, horizon, vx + i * 410, y1, line)
     for j in range(1, 6):
-        y = horizon + (H - horizon) * (j / 6) ** 1.6
-        c.drawLine(0, y, W, y, P(mix(floor, (0, 0, 0), 0.18), 0.35, StrokeWidth=2))
+        y = horizon + (y1 - horizon) * (j / 6) ** 1.6
+        c.drawLine(x0, y, x1, y, P(mix(floor, (0, 0, 0), 0.18), 0.35, StrokeWidth=2))
 
 
 def window(c, x0, y0, x1, y1, view, frame=(52, 46, 46), bars=(2, 2), curtains=None, sill=True):
@@ -215,7 +216,7 @@ def sky(c, x0, y0, x1, y1, mood):
         "sunset": [(40, 34, 70), (150, 70, 70), (255, 150, 80)],
         "fire": [(30, 22, 40), (110, 50, 50), (240, 120, 60)],
         "night": [(8, 10, 24), (20, 24, 48), (44, 42, 70)],
-        "fog": [(120, 126, 132), (150, 154, 158), (170, 172, 174)],
+        "fog": [(78, 88, 108), (110, 120, 138), (136, 144, 158)],
         "wrong": [(30, 60, 50), (90, 140, 90), (200, 220, 140)],
     }[mood]
     vgrad(c, x0, y0, x1, y1, pal, pal[0], stops=[0, 0.6, 1])
@@ -260,7 +261,7 @@ def skyline(c, x0, y0, x1, y1, mood="night", seed=2, lights=1.0, fires=0, t=0.0,
 
 def sky_col(mood):
     return {"night": (20, 24, 48), "dawn": (70, 62, 96), "day": (160, 190, 220), "sunset": (150, 70, 70),
-            "fire": (110, 50, 50), "fog": (150, 154, 158), "wrong": (90, 140, 90)}[mood]
+            "fire": (110, 50, 50), "fog": (110, 120, 138), "wrong": (90, 140, 90)}[mood]
 
 
 def fog(c, x0, y0, x1, y1, t, a=0.6, col=(170, 172, 176), seed=4, n=18, stretch=2.6):
@@ -397,7 +398,8 @@ def alert_screen(c, r, title, kind, lines, t=0.0, footer="Further instructions w
     rrect(c, cx - s * 0.1, ty - s * 0.45, cx + s * 0.1, ty + s * 0.3, s * 0.08, (255, 255, 255))
     c.drawCircle(cx, ty + s * 0.55, s * 0.11, P((255, 255, 255)))
     gfx.draw_text(c, title, gfx.fit_font(K.heavy, title, w * 0.9, int(w * 0.085)), cx, y0 + w * 0.68, color=(255, 255, 255))
-    gfx.draw_text(c, kind, K.bold(int(w * 0.045)), cx, y0 + w * 0.77, color=(255, 120, 100), tracking=4)
+    kf = gfx.fit_font(K.bold, kind, w * 0.86, int(w * 0.045))
+    gfx.draw_text(c, kind, kf, cx, y0 + w * 0.77, color=(255, 120, 100), tracking=2)
     c.drawLine(x0 + w * 0.12, y0 + w * 0.83, x1 - w * 0.12, y0 + w * 0.83, P((255, 255, 255), 0.25, StrokeWidth=2))
     y = y0 + w * 0.98
     for i, (line, col, at) in enumerate(lines):
@@ -412,8 +414,10 @@ def alert_screen(c, r, title, kind, lines, t=0.0, footer="Further instructions w
     gfx.draw_text(c, "OK", K.bold(int(w * 0.045)), cx, y1 - w * 0.234, color=(255, 255, 255))
 
 
-def chat_screen(c, r, name, msgs, t=0.0, typing_at=None, status="online"):
-    """Chat: msgs = [(testo, mio?, quando compare)]; typing_at = da quando mostrare i tre puntini."""
+def chat_screen(c, r, name, msgs, t=0.0, typing_at=None, status="online", typing_until=None, receipt=None,
+                highlight=None):
+    """Chat: msgs = [(testo, mio?, quando compare)]; typing_at/typing_until = quando mostrare i tre puntini;
+    receipt = ("Delivered", t_flip, "Read 11:58 PM") sotto l'ultimo messaggio mio; highlight = testo da sottolineare."""
     x0, y0, x1, y1 = r
     w = x1 - x0
     rect(c, x0, y0, x1, y1, (16, 18, 24))
@@ -423,7 +427,9 @@ def chat_screen(c, r, name, msgs, t=0.0, typing_at=None, status="online"):
     gfx.draw_text(c, status, gfx.text(int(w * 0.034)), x0 + w * 0.26, y0 + w * 0.25, color=(140, 200, 150), align="left")
     y = y0 + w * 0.42
     f = gfx.text(int(w * 0.045))
-    for body, mine, at in msgs:
+    shown_mine = [i for i, (_, mine, at) in enumerate(msgs) if mine and t >= at]
+    last_i = shown_mine[-1] if shown_mine else -1
+    for i, (body, mine, at) in enumerate(msgs):
         if t < at:
             continue
         k = gfx.ease_out((t - at) / 0.2)
@@ -431,12 +437,33 @@ def chat_screen(c, r, name, msgs, t=0.0, typing_at=None, status="online"):
         bx0 = x1 - w * 0.05 - tw if mine else x0 + w * 0.05
         rrect(c, bx0, y, bx0 + tw, y + w * 0.12, w * 0.04, (60, 110, 230) if mine else (52, 54, 64), k)
         gfx.draw_text(c, body, f, bx0 + w * 0.04, y + w * 0.077, color=(255, 255, 255), alpha=k, align="left")
+        if highlight and highlight in body:
+            hk = gfx.ease_out((t - highlight_at(msgs, body)) / 0.6)
+            x_start = bx0 + w * 0.04 + f.measureText(body[:body.index(highlight)])
+            hw = f.measureText(highlight)
+            glow(c, x_start + hw / 2, y + w * 0.06, hw, (206, 242, 64), 0.25 * hk)
+            rect(c, x_start, y + w * 0.09, x_start + hw * hk, y + w * 0.097, (206, 242, 64))
+        last_mine = (y + w * 0.12, x1 - w * 0.05) if mine and i == last_i else None
         y += w * 0.15
-    if typing_at is not None and t >= typing_at:
+        if last_mine and receipt:
+            label = receipt[0] if t < receipt[1] else receipt[2]
+            col = (150, 150, 160) if t < receipt[1] else (255, 120, 110)
+            if receipt[1] <= t < receipt[1] + 0.3 and int(t * 30) % 2 == 0:
+                label = "R#a? 11:58"
+            gfx.draw_text(c, label, gfx.text(int(w * 0.032)), last_mine[1], last_mine[0] + w * 0.045, color=col, align="right")
+            y += w * 0.05
+    if typing_at is not None and t >= typing_at and (typing_until is None or t < typing_until):
         rrect(c, x0 + w * 0.05, y, x0 + w * 0.25, y + w * 0.1, w * 0.04, (52, 54, 64))
         for i in range(3):
             a = 0.4 + 0.6 * max(0, math.sin(t * 6 - i * 0.8))
             c.drawCircle(x0 + w * (0.1 + i * 0.05), y + w * 0.05, w * 0.014, P((220, 220, 230), a))
+
+
+def highlight_at(msgs, body):
+    for b, _, at in msgs:
+        if b == body:
+            return at + 0.3
+    return 0.0
 
 
 # ---------- spioncino ----------
@@ -631,12 +658,15 @@ def tv(c, x0, y0, x1, y1, on=0.0, t=0.0, unplugged=False):
 
 
 def smart_speaker(c, x, yb, h=110, ring=0.0, t=0.0):
-    rrect(c, x - 34, yb - h, x + 34, yb, 20, (52, 54, 62))
-    for k in range(5):
-        c.drawLine(x - 28, yb - h + 26 + k * 16, x + 28, yb - h + 26 + k * 16, P((40, 42, 48), StrokeWidth=3))
+    """Cassa smart generica: una scatola squadrata con la griglia e una barra LED corta."""
+    rrect(c, x - 52, yb - h, x + 52, yb, 10, (46, 48, 54))
+    for k in range(6):
+        for j in range(8):
+            c.drawCircle(x - 38 + j * 11, yb - h + 22 + k * 13, 2.2, P((30, 32, 36)))
+    rrect(c, x - 22, yb - 14, x + 22, yb - 8, 3, (20, 20, 24))
     if ring > 0:
-        rect(c, x - 30, yb - h + 6, x + 30, yb - h + 12, (120, 200, 255), ring * (0.6 + 0.4 * math.sin(t * 7)))
-        glow(c, x, yb - h + 9, 90, (120, 200, 255), 0.4 * ring)
+        rrect(c, x - 22, yb - 14, x + 22, yb - 8, 3, (220, 236, 255), ring * (0.6 + 0.4 * math.sin(t * 7)))
+        glow(c, x, yb - 11, 80, (200, 225, 255), 0.45 * ring)
 
 
 def fridge(c, x0, y0, x1, y1, light=0.0, col=(206, 208, 212)):

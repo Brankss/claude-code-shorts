@@ -56,3 +56,46 @@ Stile grafico:
 - `shorts/pov_gfx.py`: la scenografia. Stanze, finestre con vista, porte con spioncino e luce sotto, librerie, divani, lampade, letti, skyline con luci e incendi, nebbia, pioggia, polvere, buio con le zone illuminate, fascio di torcia, telefono (lock screen, allerta, chat) e spioncino.
 - `shorts/rules_audio.py`: tappeto drone in re minore con sub e battito che segue la tensione di ogni beat, ducking sotto la voce, effetti procedurali (il vero tono delle allerte d'emergenza a 853+960 Hz, vibrazione, colpi alla porta, sirena, blackout, glitch, din-don da altoparlante...) e un limiter che porta il volume medio a quello del riferimento (circa -17 dB RMS).
 - Post-produzione: `POST_SOFT` in `formats.py`, con il bloom solo sulle luci vere, la vignetta e la grana.
+
+## 4. Episodio 1: DON'T ANSWER (Day 1)
+
+> Imagine you hear your mom calling from the backyard... while she's texting you. From work.
+
+Una nebbia che copia le voci. L'allerta dice: "Do not answer any voice, even one you know". A mezzanotte la bambina della casa accanto, Ellie, è persa nella nebbia fuori dalla finestra. Piange, ha in mano il telefono della mamma e conosce la password di famiglia che nessuno ha mai detto ad alta voce. E dietro di lei si alza qualcosa. "So... do you answer her?"
+
+**Come è nata.** Un workflow con 13 agenti:
+1. sei autori hanno scritto un concept ciascuno, ognuno da un'angolazione diversa (luogo quotidiano, minaccia sonora, disastro realistico, spazio chiuso, cielo e luce, scelta libera);
+2. tre giudici (stratega di crescita, story editor, motion designer) hanno dato i voti: ha vinto "SAY NOTHING" quasi all'unanimità, poi rinominato;
+3. lo sceneggiatore ha scritto la bozza;
+4. due critici l'hanno attaccata, uno sulla retention e uno su produzione e continuità;
+5. lo sceneggiatore l'ha rivista.
+
+Le critiche che hanno cambiato di più il video:
+- **La contraddizione sta nella prima frase**: la mamma chiama dal giardino *mentre* ti scrive dal lavoro. Il titolo compare sopra l'inquadratura in movimento, senza frame neri.
+- **Regola #1 fisica** ("COVER EVERY WINDOW") invece di un'altra regola sul non parlare: così la #4 suona come un callback e non come una ripetizione.
+- **La password piantata in silenzio**: niente "capirai stanotte", solo la sottolineatura su "blue kite".
+- **Un indizio a favore e uno contro**: Ellie ha il telefono della mamma (forse è vera), ma la chat della mamma risulta "Read 11:51 PM" (qualcuno l'ha letta), e "blue kite" esce un po' troppo piatta e in ritardo.
+- **La seconda minaccia è dietro di lei**, non dietro di te: se è vera, solo tu puoi salvarla parlando.
+- **Titolo "DON'T ANSWER"** invece di "SAY NOTHING": "Say Nothing" è il titolo di un libro e di una miniserie TV famosi. Il nuovo titolo richiama anche la domanda finale.
+- **Allarme inventato**: niente tono reale delle allerte d'emergenza (853+960 Hz), che in USA la FCC vieta di trasmettere fuori da un'emergenza vera.
+- **Cassa generica** (scatola con una barra LED), non la cassa cilindrica con l'anello luminoso di un prodotto noto.
+
+Dettagli per chi riguarda il video (nessuno li nomina):
+- alle 7:16 Ellie esce dal portico e va verso un'onda nella nebbia;
+- il vicino in vestaglia blu torna alle 7:52 con il collo piegato, la stessa posa di Ellie a mezzanotte;
+- la riga "MOM · READ 11:51 PM" compare nell'HUD prima che la storia la riveli.
+
+**Voci.**
+- Narratore: `am_michael*0.6+am_onyx*0.4` a velocità 1.22.
+- Ellie: `af_heart` alzata di 2,5 semitoni (sintetizzata più lenta e poi accelerata, così la durata non cambia), filtrata "attraverso il vetro"; "blue kite" è sintetizzata a parte con un tono diverso e un attimo in ritardo.
+- Le voci nella nebbia ("Sweetie?", "Hello?", "Over here...") sono effetti `say:` con il filtro "lontano".
+- L'eco finale è la domanda del narratore rallentata che esce dalla cassa staccata.
+
+**Durata**: circa 100 s, di cui 95 di storia (il riferimento ne dura 91).
+
+## 5. Note oneste
+
+- **Non posso ascoltare l'audio**: ho scelto le voci misurando l'altezza e affidandomi alle valutazioni pubbliche delle voci Kokoro. La resa della voce va giudicata a orecchio. Cambiarla costa una riga (`narrator=` / `char_voice=` nella storia).
+- **Kokoro è buono ma non è ElevenLabs**: niente pianto vero né sussurri controllati. Se un giorno ci sarà un TTS con API raggiungibile dal container, basta sostituire `voice.say`.
+- **"Synthetic narrator voice" è scritto nella descrizione**: è onesto e mette al riparo dalle regole delle piattaforme sui contenuti sintetici.
+- **Una storia così si scrive a mano** (con il workflow), non in automatico: 1-2 episodi a settimana. Il format è fuori dalla rotazione giornaliera di `daily.py`.
