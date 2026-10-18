@@ -263,14 +263,22 @@ def sky_col(mood):
             "fire": (110, 50, 50), "fog": (150, 154, 158), "wrong": (90, 140, 90)}[mood]
 
 
-def fog(c, x0, y0, x1, y1, t, a=0.6, col=(170, 172, 176), seed=4):
+def fog(c, x0, y0, x1, y1, t, a=0.6, col=(170, 172, 176), seed=4, n=18, stretch=2.6):
+    """Banchi di nebbia: ellissi morbide allungate che scorrono piano, più una foschia uniforme."""
     rng = np.random.default_rng(seed)
-    for k in range(14):
-        cx = x0 + ((rng.uniform(0, 1) + t * rng.uniform(0.004, 0.012)) % 1.2 - 0.1) * (x1 - x0)
-        cy = y0 + rng.uniform(0.2, 1.0) * (y1 - y0)
-        r = rng.uniform(180, 420)
-        sh = skia.GradientShader.MakeRadial((cx, cy), r, [rgba(col, a * 0.5), rgba(col, 0)])
-        c.drawCircle(cx, cy, r, skia.Paint(AntiAlias=True, Shader=sh))
+    w, h = x1 - x0, y1 - y0
+    vgrad(c, x0, y0, x1, y1, [mix(col, (0, 0, 0), 0.0), col, col], col, a=a * 0.35, stops=[0, 0.5, 1])
+    for k in range(n):
+        speed = rng.uniform(0.006, 0.018) * (1 if k % 2 else -1)
+        cx = x0 + ((rng.uniform(0, 1) + t * speed) % 1.4 - 0.2) * w
+        cy = y0 + rng.uniform(0.0, 1.0) * h
+        r = rng.uniform(0.18, 0.4) * w
+        c.save()
+        c.translate(cx, cy)
+        c.scale(stretch, 1.0)
+        sh = skia.GradientShader.MakeRadial((0, 0), r, [rgba(col, a * rng.uniform(0.35, 0.6)), rgba(col, 0)])
+        c.drawCircle(0, 0, r, skia.Paint(AntiAlias=True, Shader=sh))
+        c.restore()
 
 
 def rain(c, x0, y0, x1, y1, t, n=140, a=0.35, seed=5):
@@ -540,3 +548,112 @@ def corridor(c, vx=540, vy=820, wall=(46, 84, 82), floor=(140, 58, 48), ceil=(30
         hw = far_w / 2 + (W / 2 - far_w / 2) * d
         rect(c, vx - hw * 0.25, y - 4 - 10 * d, vx + hw * 0.25, y + 4 + 6 * d, (255, 236, 200), 0.9 * light_on)
         glow(c, vx, y + 30 * d, 120 + 380 * d, (255, 220, 170), 0.22 * light_on)
+
+
+# ---------- quartiere ----------
+
+def house(c, x, yb, w=520, h=420, siding=(150, 156, 168), roof=(70, 62, 66), trim=(225, 222, 214),
+          lit=(), porch_light=0.0, door=(90, 54, 44), seed=1, dark=0.0):
+    """Casa a due piani vista di fronte. lit = indici delle finestre accese (0-3 sopra, 4-5 sotto)."""
+    sid = mix(siding, (10, 12, 18), dark)
+    rf = mix(roof, (6, 6, 10), dark)
+    x0, x1 = x - w / 2, x + w / 2
+    top = yb - h
+    rect(c, x0, top, x1, yb, sid)
+    for k in range(int(h / 18)):
+        c.drawLine(x0, top + k * 18 + 9, x1, top + k * 18 + 9, P(mix(sid, (0, 0, 0), 0.1), 0.6, StrokeWidth=2))
+    p = skia.Path()
+    p.addPoly([skia.Point(x0 - 40, top + 4), skia.Point(x, top - h * 0.45), skia.Point(x1 + 40, top + 4)], True)
+    c.drawPath(p, P(rf))
+    rect(c, x0 + w * 0.68, top - h * 0.38, x0 + w * 0.78, top - h * 0.08, mix(rf, (0, 0, 0), 0.2))   # camino
+    wins = [(0.12, 0.08), (0.62, 0.08), (0.12, 0.55), (0.62, 0.55)]
+    for i, (fx, fy) in enumerate(wins):
+        wx0, wy0 = x0 + w * fx, top + h * fy
+        wx1, wy1 = wx0 + w * 0.26, wy0 + h * 0.28
+        on = i in lit
+        rect(c, wx0 - 8, wy0 - 8, wx1 + 8, wy1 + 8, mix(trim, (10, 12, 18), dark))
+        rect(c, wx0, wy0, wx1, wy1, (255, 214, 140) if on else mix((40, 46, 58), (4, 5, 8), dark))
+        if on:
+            glow(c, (wx0 + wx1) / 2, (wy0 + wy1) / 2, w * 0.35, (255, 190, 110), 0.3)
+        c.drawLine((wx0 + wx1) / 2, wy0, (wx0 + wx1) / 2, wy1, P(mix(trim, (10, 12, 18), dark), StrokeWidth=5))
+        c.drawLine(wx0, (wy0 + wy1) / 2, wx1, (wy0 + wy1) / 2, P(mix(trim, (10, 12, 18), dark), StrokeWidth=5))
+    # porta e portico
+    dx0, dx1 = x - w * 0.09, x + w * 0.09
+    rect(c, dx0 - 8, yb - h * 0.42 - 8, dx1 + 8, yb, mix(trim, (10, 12, 18), dark))
+    rect(c, dx0, yb - h * 0.42, dx1, yb, mix(door, (4, 4, 6), dark))
+    c.drawCircle(dx1 - 12, yb - h * 0.2, 5, P((200, 170, 90)))
+    rect(c, x - w * 0.22, yb - h * 0.5, x + w * 0.22, yb - h * 0.45, mix(rf, (0, 0, 0), 0.1))
+    for k in range(3):
+        rect(c, x - w * 0.16 - k * 14, yb + k * 16, x + w * 0.16 + k * 14, yb + (k + 1) * 16, mix((150, 146, 140), (8, 8, 10), dark))
+    if porch_light > 0:
+        c.drawCircle(dx1 + 24, yb - h * 0.36, 7, P((255, 230, 170), porch_light))
+        glow(c, dx1 + 24, yb - h * 0.36, 160, (255, 200, 120), 0.4 * porch_light)
+
+
+def streetlight(c, x, yb, h=560, on=1.0, flicker_t=None):
+    c.drawLine(x, yb, x, yb - h, P((40, 42, 48), StrokeWidth=12))
+    c.drawLine(x, yb - h, x + 90, yb - h + 10, P((40, 42, 48), StrokeWidth=10))
+    rrect(c, x + 60, yb - h + 4, x + 120, yb - h + 22, 6, (60, 60, 64))
+    if on > 0:
+        rect(c, x + 66, yb - h + 18, x + 114, yb - h + 24, (255, 236, 190), on)
+        glow(c, x + 90, yb - h + 30, 300, (255, 220, 160), 0.35 * on)
+        p = skia.Path()
+        p.addPoly([skia.Point(x + 66, yb - h + 24), skia.Point(x + 114, yb - h + 24), skia.Point(x + 260, yb),
+                   skia.Point(x - 80, yb)], True)
+        sh = skia.GradientShader.MakeLinear([(x + 90, yb - h), (x + 90, yb)], [rgba((255, 225, 170), 0.22 * on),
+                                                                               rgba((255, 225, 170), 0.02 * on)])
+        c.drawPath(p, skia.Paint(AntiAlias=True, Shader=sh, BlendMode=skia.BlendMode.kPlus))
+
+
+def sound_rings(c, x, y, t, col=(200, 220, 255), n=3, r_max=260, a=0.6, period=1.6, width=6):
+    """Onde sonore che si allargano da un punto (una casa che "parla")."""
+    for k in range(n):
+        ph = ((t / period) + k / n) % 1.0
+        c.drawCircle(x, y, 20 + ph * r_max, P(col, a * (1 - ph) ** 1.5, StrokeWidth=width * (1 - 0.5 * ph),
+                                               Style=skia.Paint.kStroke_Style))
+
+
+def tv(c, x0, y0, x1, y1, on=0.0, t=0.0, unplugged=False):
+    rrect(c, x0, y0, x1, y1, 10, (20, 20, 24))
+    rect(c, x0 + 14, y0 + 14, x1 - 14, y1 - 14, (12, 14, 18))
+    if on > 0:
+        rect(c, x0 + 14, y0 + 14, x1 - 14, y1 - 14, (120, 140, 190), 0.5 * on)
+        glow(c, (x0 + x1) / 2, (y0 + y1) / 2, (x1 - x0), (130, 160, 255), 0.2 * on)
+    rect(c, (x0 + x1) / 2 - 50, y1, (x0 + x1) / 2 + 50, y1 + 16, (30, 30, 34))
+    cab = P((30, 30, 34), StrokeWidth=5, Style=skia.Paint.kStroke_Style)
+    p = skia.Path()
+    p.moveTo(x1 - 30, y1)
+    if unplugged:
+        p.quadTo(x1 + 20, y1 + 120, x1 + 90, y1 + 150)
+    else:
+        p.quadTo(x1 + 10, y1 + 80, x1 + 40, y1 + 140)
+    c.drawPath(p, cab)
+
+
+def smart_speaker(c, x, yb, h=110, ring=0.0, t=0.0):
+    rrect(c, x - 34, yb - h, x + 34, yb, 20, (52, 54, 62))
+    for k in range(5):
+        c.drawLine(x - 28, yb - h + 26 + k * 16, x + 28, yb - h + 26 + k * 16, P((40, 42, 48), StrokeWidth=3))
+    if ring > 0:
+        rect(c, x - 30, yb - h + 6, x + 30, yb - h + 12, (120, 200, 255), ring * (0.6 + 0.4 * math.sin(t * 7)))
+        glow(c, x, yb - h + 9, 90, (120, 200, 255), 0.4 * ring)
+
+
+def fridge(c, x0, y0, x1, y1, light=0.0, col=(206, 208, 212)):
+    rrect(c, x0, y0, x1, y1, 14, col)
+    c.drawLine(x0, y0 + (y1 - y0) * 0.36, x1, y0 + (y1 - y0) * 0.36, P(mix(col, (0, 0, 0), 0.25), StrokeWidth=4))
+    for yy in (0.18, 0.55):
+        rect(c, x1 - 26, y0 + (y1 - y0) * yy, x1 - 16, y0 + (y1 - y0) * (yy + 0.14), (120, 120, 126))
+    if light > 0:
+        c.drawCircle(x0 + 30, y0 + 30, 6, P((120, 230, 255), light))
+
+
+def counter(c, x0, x1, yf, h=330, top=(180, 170, 156), body=(92, 72, 58)):
+    rect(c, x0, yf - h, x1, yf, body)
+    rect(c, x0 - 10, yf - h - 18, x1 + 10, yf - h, top)
+    n = max(1, int((x1 - x0) / 160))
+    for k in range(n):
+        cx0 = x0 + (x1 - x0) * k / n + 10
+        cx1 = x0 + (x1 - x0) * (k + 1) / n - 10
+        rect(c, cx0, yf - h + 20, cx1, yf - 20, mix(body, (255, 255, 255), 0.05))
+        rect(c, (cx0 + cx1) / 2 - 20, yf - h + 50, (cx0 + cx1) / 2 + 20, yf - h + 58, (170, 170, 176))

@@ -35,6 +35,13 @@ POSES = {
     "crawl": dict(torso=76, head=-62, lsh=-66, lel=0, rsh=-84, rel=0, lhip=6, lkn=-88, rhip=-6, rkn=-84),
     "plead": dict(torso=6, head=-4, lsh=60, lel=70, rsh=50, rel=80, lhip=4, lkn=0, rhip=-4, rkn=0),
     "hold_arm": dict(torso=8, head=8, lsh=20, lel=110, rsh=10, rel=30, lhip=4, lkn=0, rhip=-4, rkn=0),
+    "shush": dict(torso=2, head=4, lsh=20, lel=100, rsh=14, rel=150, lhip=4, lkn=0, rhip=-4, rkn=0),
+    "text": dict(torso=10, head=26, lsh=34, lel=100, rsh=28, rel=104, lhip=4, lkn=0, rhip=-4, rkn=0),
+    "reach_low": dict(torso=55, head=-20, lsh=70, lel=10, rsh=60, rel=20, lhip=-30, lkn=60, rhip=20, rkn=40),
+    "kneel": dict(torso=20, head=-6, lsh=50, lel=30, rsh=70, rel=10, lhip=95, lkn=-95, rhip=0, rkn=-90),
+    "flashlight": dict(torso=4, head=-4, lsh=10, lel=10, rsh=88, rel=4, lhip=6, lkn=0, rhip=-6, rkn=0),
+    "wave": dict(torso=0, head=-6, lsh=6, lel=4, rsh=150, rel=-30, lhip=4, lkn=0, rhip=-4, rkn=0),
+    "listen": dict(torso=-4, head=-28, lsh=4, lel=2, rsh=-4, rel=-2, lhip=3, lkn=0, rhip=-3, rkn=0),
     "knock": dict(torso=4, head=-4, lsh=6, lel=4, rsh=80, rel=70, lhip=4, lkn=0, rhip=-4, rkn=0),
 }
 
@@ -76,6 +83,7 @@ class Figure:
     face: str = None               # None (il protagonista non ha faccia), "glasses", "plain", "worried"
     extras: list = field(default_factory=list)   # "mustache", "red_sleeve", "hat", "backpack", "scarf"
     shade: float = 0.0             # 0..1 quanto è in ombra (luce bassa)
+    coat: tuple = None             # colore dell'impermeabile col cappuccio (es. giallo), None = niente
 
     def joints(self, x, y, pose, facing=1):
         """Posizioni (px) di tutte le articolazioni; (x, y) = anca."""
@@ -158,6 +166,25 @@ class Figure:
                                          StrokeCap=skia.Paint.kRound_Cap, Color=rgba(red, alpha)))
         hx, hy = J["head"]
         r = J["r"]
+        if self.coat:
+            # impermeabile: trapezio dalle spalle alle ginocchia, maniche, cappuccio attorno alla testa
+            coat = mix(self.coat, (20, 22, 30), self.shade * 0.6)
+            sx, sy = J["sho"]
+            hx0, hy0 = J["hip"]
+            low = (J["lknee"][1] + J["rknee"][1]) / 2 * 0.6 + hy0 * 0.4
+            body = skia.Path()
+            body.moveTo(sx - 0.07 * H, sy - 0.01 * H)
+            body.lineTo(sx + 0.07 * H, sy - 0.01 * H)
+            body.lineTo(hx0 + 0.13 * H, low)
+            body.lineTo(hx0 - 0.13 * H, low)
+            body.close()
+            c.drawPath(body, skia.Paint(AntiAlias=True, Color=rgba(ink, alpha), Style=skia.Paint.kStroke_Style,
+                                        StrokeWidth=2 * o, StrokeJoin=skia.Paint.kRound_Join))
+            c.drawPath(body, skia.Paint(AntiAlias=True, Color=rgba(coat, alpha)))
+            for s_ in ("l", "r"):
+                limb([J["sho"], J[s_ + "elb"]], coat, w * 1.5)
+            c.drawCircle(hx, hy, r * 1.32 + o, skia.Paint(AntiAlias=True, Color=rgba(ink, alpha)))
+            c.drawCircle(hx, hy, r * 1.32, skia.Paint(AntiAlias=True, Color=rgba(coat, alpha)))
         c.drawCircle(hx, hy, r + o, skia.Paint(AntiAlias=True, Color=rgba(ink, alpha)))
         c.drawCircle(hx, hy, r, skia.Paint(AntiAlias=True, Color=rgba(fill, alpha)))
         if "hat" in self.extras:

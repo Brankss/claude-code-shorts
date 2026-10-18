@@ -54,6 +54,8 @@ class Beat:
     params: dict = field(default_factory=dict)
     music: float = None           # tensione 0..1 della musica (None = invariata)
     caption: bool = True          # False: niente didascalia (il testo è già sullo schermo)
+    hud: tuple = None             # righe extra dell'HUD [(testo, colore[, secondi dopo cui si guasta in testo2, testo2])]
+                                  # None = invariate, () = nessuna
 
 
 @dataclass
@@ -124,13 +126,15 @@ class Timeline:
         t = story.lead
         scene = None
         clock = ""
+        hud = ()
         for b in story.beats:
             if b.scene is not None or b.cam is not None or not self.shots:
                 self.shots.append({"t0": t, "cam": b.cam or {}, "scene": b.scene or scene})
             scene = b.scene or scene
             clock = clock if b.clock is None else b.clock
+            hud = hud if b.hud is None else b.hud
             entry = {"beat": b, "t0": t, "scene": scene, "clock": clock, "takes": [], "words": [],
-                     "shot": len(self.shots) - 1}
+                     "shot": len(self.shots) - 1, "hud": hud}
             v, sp = (story.narrator, story.speed) if b.who == "narrator" else (story.char_voice, story.char_speed)
             for take in _takes(b.text):
                 words, audio = voice.say(take, v, sp)
@@ -258,6 +262,19 @@ class Renderer:
         c.drawLine(x, y + 96, x + 250, y + 96, skia.Paint(AntiAlias=True, StrokeWidth=2, Color=rgba((255, 255, 255), 0.35 * a)))
         gfx.draw_text(c, self.story.place, gfx.mono(22, "Medium"), x, y + 128, color=(170, 172, 180), alpha=a,
                       align="left", tracking=3)
+        yy = y + 162
+        for line in entry["hud"]:
+            txt, col = line[0], line[1]
+            if len(line) > 3 and s >= line[2]:
+                g = s - line[2]
+                if g < 0.35 and int(g * 30) % 2 == 0:
+                    gfx.draw_text(c, txt, gfx.mono(22, "Medium"), x + 6 * math.sin(g * 90), yy, color=(255, 60, 60),
+                                  alpha=a, align="left", tracking=3)
+                    yy += 32
+                    continue
+                txt, col = line[3], line[4] if len(line) > 4 else (255, 80, 70)
+            gfx.draw_text(c, txt, gfx.mono(22, "Medium"), x, yy, color=col, alpha=a, align="left", tracking=3)
+            yy += 32
 
     # --- card: regole, titolo, domanda finale ---
 
