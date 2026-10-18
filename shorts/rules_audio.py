@@ -184,7 +184,41 @@ def scrape(d=2.0, rng=None):
     return 0.5 * x * _f(g, "low", 25) * np.minimum(1, t / 0.3)
 
 
+def tap(hard=1.0, rng=None):
+    """Colpo di nocca sul vetro: tintinnio acuto più il tonfo del telaio."""
+    rng = rng or np.random.default_rng(13)
+    t = _t(0.4)
+    ting = sum(np.sin(2 * np.pi * f * t) * np.exp(-t * d) for f, d in ((2350, 38), (3710, 55), (5200, 70)))
+    body = np.sin(2 * np.pi * 160 * t) * np.exp(-t * 30)
+    click = _f(rng.normal(0, 1, len(t)), "high", 3000) * np.exp(-t * 400)
+    return (0.25 * ting + 0.7 * body + 0.4 * click) * hard
+
+
+def text_ping():
+    """Messaggio arrivato: due note brevi e luminose."""
+    out = np.zeros(int(0.5 * SR))
+    for off, n in ((0.0, 88), (0.09, 93)):
+        t = _t(0.3)
+        _place(out, np.sin(2 * np.pi * A.note(n) * t) * np.exp(-t * 18) * 0.5, off * SR)
+    return out
+
+
+def unplug():
+    """Spina staccata: un tonfo sordo e lo scatto della plastica."""
+    t = _t(0.25)
+    x = np.sin(2 * np.pi * 90 * t) * np.exp(-t * 40)
+    _place(x, WA.click(1800, 0.015) * 0.5, 0)
+    return x
+
+
 SFX = {
+    "tap": lambda rng: tap(1.0, rng),
+    "tap_soft": lambda rng: tap(0.5, rng),
+    "tap_hard": lambda rng: tap(1.6, rng),
+    "text": lambda rng: text_ping(),
+    "unplug": lambda rng: unplug(),
+    "fog": lambda rng: noise_bed(6.0, 150, 900, rng, am=0.5, rate=0.15) * 0.5 * np.minimum(1, _t(6.0) / 1.0) *
+    np.minimum(1, (6.0 - _t(6.0)) / 1.5),
     "buzz": lambda rng: buzz(1.8),
     "buzz_long": lambda rng: buzz(3.2),
     "alert": lambda rng: alert(2.6),
@@ -264,18 +298,56 @@ def limit(x, target_db=-16.5, ceiling=0.94):
     return np.clip(y, -0.99, 0.99)
 
 
+def far(x, rng=None):
+    """Voce che arriva da fuori, lontana, nella nebbia: niente alti, eco lunga, un po' di ritardo."""
+    rng = rng or np.random.default_rng(2)
+    y = _f(x, "low", 1800, order=3)
+    ir_t = _t(1.6)
+    ir = rng.normal(0, 1, len(ir_t)) * np.exp(-ir_t * 3.0)
+    ir = _f(ir, "low", 2500)
+    wet = np.convolve(y, ir / np.sqrt((ir ** 2).sum()))[: len(y) + int(1.2 * SR)]
+    out = np.zeros(len(wet))
+    out[: len(y)] += 0.55 * y
+    out += 0.6 * wet
+    return out / (np.abs(out).max() + 1e-9) * np.abs(x).max() * 0.7
+
+
+def glass(x):
+    """Voce attraverso il vetro: come la porta ma un po' più chiara."""
+    y = _f(x, "low", 2400, order=3) + 0.3 * _f(x, "band", [200, 600])
+    return y / (np.abs(y).max() + 1e-9) * np.abs(x).max() * 0.85
+
+
 def _voice_track(tl, story, n):
     v = np.zeros(n)
     for entry in tl.beats:
-        for t0, aud, who in entry["takes"]:
+        for t0, aud, who, filt in entry["takes"]:
             a = aud
-            if who == "char" and story.char_filter == "door":
+            if filt == "door":
                 a = voice.through_door(a)
             a = resample_poly(a, SR, voice.SR)
-            if who == "char" and story.char_filter == "speaker":
+            if filt == "speaker":
                 a = speaker(a) * 1.6
+            elif filt == "far":
+                a = far(a)
+            elif filt == "glass":
+                a = glass(a)
             _place(v, a, t0 * SR)
     return v
+
+
+def echo_wrong(tl):
+    """L'ultima battuta del narratore che torna, più lenta e più bassa: qualcosa la sta copiando."""
+    last = None
+    for entry in tl.beats:
+        for t0, aud, who, filt in entry["takes"]:
+            if who == "narrator":
+                last = aud
+    if last is None:
+        return np.zeros(1)
+    a = resample_poly(last, SR, voice.SR)
+    a = resample_poly(a, 9, 8)                      # 12% più lenta e più grave
+    return far(a) * 0.9
 
 
 def build(r):
@@ -312,7 +384,9 @@ def build(r):
         for item in b.sfx:
             name, off = item[0], item[1]
             gain = item[2] if len(item) > 2 else 0.5
-            mx.add(e["t0"] + off, SFX[name](rng), gain, pan=float(rng.uniform(-0.2, 0.2)), reverb=0.25)
+            pan = item[3] if len(item) > 3 else float(rng.uniform(-0.2, 0.2))
+            sig = echo_wrong(tl) if name == "echo_last" else SFX[name](rng)
+            mx.add(e["t0"] + off, sig, gain, pan=pan, reverb=0.25)
         card = b.card or {}
         if card.get("kind") == "rule":
             mx.add(e["t0"] + card.get("at", 0.0), WA.boom(1.8), 0.5, reverb=0.35)

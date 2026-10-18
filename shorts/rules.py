@@ -54,6 +54,10 @@ class Beat:
     params: dict = field(default_factory=dict)
     music: float = None           # tensione 0..1 della musica (None = invariata)
     caption: bool = True          # False: niente didascalia (il testo è già sullo schermo)
+    voice: str = None             # voce diversa per questa battuta (es. la "mamma" lontana)
+    filt: str = None              # effetto sulla voce: door | far | speaker | glass (None = quello della storia)
+    name: str = None              # cartellino: nome di chi parla (None = story.char_name)
+    tag: str = None               # cartellino: dove ("THROUGH THE GLASS")
     hud: tuple = None             # righe extra dell'HUD [(testo, colore[, secondi dopo cui si guasta in testo2, testo2])]
                                   # None = invariate, () = nessuna
 
@@ -136,9 +140,11 @@ class Timeline:
             entry = {"beat": b, "t0": t, "scene": scene, "clock": clock, "takes": [], "words": [],
                      "shot": len(self.shots) - 1, "hud": hud}
             v, sp = (story.narrator, story.speed) if b.who == "narrator" else (story.char_voice, story.char_speed)
+            v = b.voice or v
+            filt = b.filt if b.filt is not None else (story.char_filter if b.who == "char" else None)
             for take in _takes(b.text):
                 words, audio = voice.say(take, v, sp)
-                entry["takes"].append((t, audio, b.who))
+                entry["takes"].append((t, audio, b.who, filt))
                 entry["words"] += [voice.Word(w.text, t + w.start, t + w.end) for w in words]
                 t += len(audio) / voice.SR + (0.42 if take.endswith("...") else 0.1)
             t += b.hold
@@ -148,7 +154,8 @@ class Timeline:
             if b.caption:
                 for ch in _chunks(entry["words"]):
                     self.captions.append({"t0": ch[0].start - 0.04, "words": [(w.text, w.start) for w in ch],
-                                          "who": b.who, "end": ch[-1].end, "beat_t1": t})
+                                          "who": b.who, "end": ch[-1].end, "beat_t1": t,
+                                          "name": b.name, "tag": b.tag})
         for i, cap in enumerate(self.captions):
             nxt = self.captions[i + 1]["t0"] if i + 1 < len(self.captions) else math.inf
             cap["t1"] = min(nxt, cap["end"] + 0.45, cap["beat_t1"] + 0.05)
