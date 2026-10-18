@@ -2,3 +2,5 @@ numpy
 scipy
 skia-python
 imageio-ffmpeg
+kokoro-onnx
+onnx

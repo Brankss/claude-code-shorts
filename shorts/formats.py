@@ -112,6 +112,12 @@ POST = ("format=gbrp,split[a][b];[b]scale=iw/4:ih/4,curves=all='0/0 0.45/0 1/1',
         "scale=1080:1920[g];[a][g]blend=all_mode=screen,vignette=angle=PI/6,noise=alls=4:allf=t+u")
 
 
+# Come POST ma con il bloom solo sulle luci vere (lampade, fuochi, schermi): gli stickman color crema
+# su fondo scuro altrimenti "brillano".
+POST_SOFT = ("format=gbrp,split[a][b];[b]scale=iw/4:ih/4,curves=all='0/0 0.7/0 1/1',gblur=sigma=7,"
+             "scale=1080:1920[g];[a][g]blend=all_mode=screen:all_opacity=0.7,vignette=angle=PI/5,noise=alls=5:allf=t+u")
+
+
 class WhatIf:
     """Storie a effetto farfalla con twist reale (vedi whatif.py e stories.py). Non è nella rotazione
     giornaliera: ogni storia è scritta a mano. Episodio n = n-esima storia di STORIES."""
@@ -130,5 +136,25 @@ class WhatIf:
         return Job(r.n_frames, r.render, lambda: whatif_audio.build(r), meta, workers=4, vf=POST)
 
 
-FORMATS = {f.name: f for f in (Contagio(), Maze(), Sync(), WhatIf())}
+class Rules:
+    """Serie POV di sopravvivenza con regole numerate e voce narrante (vedi rules.py e pov_stories.py).
+    Come What If è scritta a mano, fuori dalla rotazione giornaliera. Episodio n = n-esima storia."""
+    name = "rules"
+
+    def pick(self, episode):
+        return episode
+
+    def prepare(self, seed, episode=None):
+        from . import pov_stories, rules, rules_audio
+        key = list(pov_stories.STORIES)[(seed - 1) % len(pov_stories.STORIES)]
+        story = pov_stories.STORIES[key]()
+        r = rules.Renderer(story)
+        stats = {"duration": round(r.tl.duration, 2), "beats": len(story.beats),
+                 "words": sum(len(b.text.split()) for b in story.beats)}
+        meta = {"format": self.name, "story": key, "seed": seed, "episode": episode, "winner": None,
+                "stats": stats, **publishing.build(self.name, episode, copy=story.copy)}
+        return Job(r.n_frames, r.render, lambda: rules_audio.build(r), meta, workers=4, vf=POST_SOFT)
+
+
+FORMATS = {f.name: f for f in (Contagio(), Maze(), Sync(), WhatIf(), Rules())}
 CYCLE = ["contagio", "maze", "sync"]
