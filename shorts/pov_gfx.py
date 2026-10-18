@@ -449,3 +449,94 @@ def peephole(c, cx, cy, r, draw, t=0.0):
     c.drawCircle(cx, cy, r, skia.Paint(AntiAlias=True, Shader=sh))
     c.restore()
     c.drawCircle(cx, cy, r, P((60, 50, 40), 0.6, StrokeWidth=6, Style=skia.Paint.kStroke_Style))
+
+
+def pin(c, x, y, label, a=1.0, up=150, col=(240, 200, 80)):
+    """Etichetta "YOU · FLOOR 14" con la linea che punta al posto giusto."""
+    if a <= 0:
+        return
+    f = K.bold(26)
+    w = f.measureText(label)
+    top = y - up
+    c.drawLine(x, y, x, top + 22, P(col, a, StrokeWidth=3))
+    c.drawCircle(x, y, 9, P(col, a, StrokeWidth=3, Style=skia.Paint.kStroke_Style))
+    r = skia.RRect.MakeRectXY(skia.Rect(x - w / 2 - 22, top - 22, x + w / 2 + 22, top + 22), 22, 22)
+    c.drawRRect(r, P((16, 14, 12), 0.88 * a))
+    c.drawRRect(r, P(col, a, StrokeWidth=3, Style=skia.Paint.kStroke_Style))
+    gfx.draw_text(c, label, f, x, top + 9, color=col, alpha=a, tracking=2)
+
+
+def shaft(c, x0, y0, x1, y1, spread, length, col=(255, 230, 190), a=0.12, angle=20):
+    """Fascio di luce dalla finestra: dal bordo (x0,y0)-(x1,y1) verso il basso, inclinato di angle gradi."""
+    ang = math.radians(90 - angle)
+    dx, dy = math.cos(ang) * length, math.sin(ang) * length
+    p = skia.Path()
+    p.moveTo(x0, y0)
+    p.lineTo(x1, y1)
+    p.lineTo(x1 + dx + spread, y1 + dy)
+    p.lineTo(x0 + dx - spread, y0 + dy)
+    p.close()
+    sh = skia.GradientShader.MakeLinear([((x0 + x1) / 2, (y0 + y1) / 2), ((x0 + x1) / 2 + dx, (y0 + y1) / 2 + dy)],
+                                        [rgba(col, a), rgba(col, 0)])
+    c.drawPath(p, skia.Paint(AntiAlias=True, Shader=sh, BlendMode=skia.BlendMode.kPlus))
+
+
+def birds(c, x0, y0, x1, y1, t, n=7, seed=8, col=(20, 18, 24)):
+    rng = np.random.default_rng(seed)
+    for k in range(n):
+        x = x0 + ((rng.uniform(0, 1) + t * rng.uniform(0.02, 0.05)) % 1) * (x1 - x0)
+        y = y0 + rng.uniform(0, 1) * (y1 - y0) + math.sin(t * 2 + k) * 6
+        flap = math.sin(t * 9 + k * 1.3) * 5
+        p = skia.Path()
+        p.moveTo(x - 9, y - flap)
+        p.quadTo(x - 4, y - 4, x, y)
+        p.quadTo(x + 4, y - 4, x + 9, y - flap)
+        c.drawPath(p, P(col, 0.85, StrokeWidth=2.5, Style=skia.Paint.kStroke_Style, StrokeCap=skia.Paint.kRound_Cap))
+
+
+def corridor(c, vx=540, vy=820, wall=(46, 84, 82), floor=(140, 58, 48), ceil=(30, 34, 38), far=(14, 14, 16),
+             doors=4, lights=3, light_on=1.0, far_w=150, far_h=260):
+    """Corridoio in prospettiva centrale (hotel, condominio, vagone): pareti, moquette, luci, porte ai lati."""
+    fx0, fx1 = vx - far_w / 2, vx + far_w / 2
+    fy0, fy1 = vy - far_h / 2, vy + far_h / 2
+
+    def quad(pts, col, a=1.0):
+        p = skia.Path()
+        p.addPoly([skia.Point(*q) for q in pts], True)
+        c.drawPath(p, P(col, a))
+
+    quad([(0, 0), (W, 0), (fx1, fy0), (fx0, fy0)], ceil)
+    quad([(0, H), (W, H), (fx1, fy1), (fx0, fy1)], floor)
+    quad([(0, 0), (fx0, fy0), (fx0, fy1), (0, H)], wall)
+    quad([(W, 0), (fx1, fy0), (fx1, fy1), (W, H)], mix(wall, (0, 0, 0), 0.15))
+    rect(c, fx0, fy0, fx1, fy1, far)
+    # motivo della moquette: rombi che si stringono verso il fondo
+    for k in range(1, 12):
+        d = (k / 12) ** 1.8
+        y = fy1 + (H - fy1) * d
+        hw = far_w / 2 + (W / 2 - far_w / 2) * d
+        c.drawLine(vx - hw, y, vx + hw, y, P(mix(floor, (0, 0, 0), 0.2), 0.5, StrokeWidth=1 + 3 * d))
+    for side in (-1, 1):
+        for i in range(doors):
+            d0 = 0.15 + i * 0.22
+            d1 = d0 + 0.1
+
+            def at(d, yy):
+                x = vx + side * (far_w / 2 + (W / 2 - far_w / 2) * d)
+                y = vy + (yy - vy) * (far_h / 2 + (H / 2 - far_h / 2) * d) / (far_h / 2) if False else None
+                return x
+
+            xa = vx + side * (far_w / 2 + (W / 2 + 80 - far_w / 2) * (1 - d1) ** 2)
+            xb = vx + side * (far_w / 2 + (W / 2 + 80 - far_w / 2) * (1 - d0) ** 2)
+            ka, kb = (abs(xa - vx) - far_w / 2) / (W / 2 - far_w / 2), (abs(xb - vx) - far_w / 2) / (W / 2 - far_w / 2)
+            ta, tb = fy0 * (1 - ka) + 0 * ka, fy0 * (1 - kb) + 0 * kb
+            ba, bb = fy1 * (1 - ka) + H * ka, fy1 * (1 - kb) + H * kb
+            top_a, top_b = ta + (ba - ta) * 0.18, tb + (bb - tb) * 0.18
+            quad([(xa, top_a), (xb, top_b), (xb, bb - (bb - tb) * 0.02), (xa, ba - (ba - ta) * 0.02)], (92, 54, 40))
+            c.drawCircle(xa + (xb - xa) * 0.85, (top_a + ba) / 2, 3 + 6 * kb, P((200, 170, 90)))
+    for i in range(lights):
+        d = 0.2 + i * 0.3
+        y = fy0 * (1 - d)
+        hw = far_w / 2 + (W / 2 - far_w / 2) * d
+        rect(c, vx - hw * 0.25, y - 4 - 10 * d, vx + hw * 0.25, y + 4 + 6 * d, (255, 236, 200), 0.9 * light_on)
+        glow(c, vx, y + 30 * d, 120 + 380 * d, (255, 220, 170), 0.22 * light_on)

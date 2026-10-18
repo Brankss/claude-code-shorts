@@ -182,10 +182,16 @@ class Renderer:
         s = t - shot["t0"]
         self.t, self.bs, self.shot, self.entry = t, t - entry["t0"], shot, entry
         z, cx, cy = self._cam(shot, s)
-        dx = dy = 0.0
-        for name, at, amp in (f for f in entry["beat"].fx if f[0] == "shake"):
-            ddx, ddy = K.shake(self.bs - at, amount=amp)
-            dx, dy = dx + ddx, dy + ddy
+        # camera a mano: una deriva lentissima, così nessuna inquadratura è mai ferma
+        sway = shot["cam"].get("sway", 1.0)
+        dx = sway * (4 * math.sin(t * 0.61) + 2 * math.sin(t * 1.37))
+        dy = sway * (3 * math.sin(t * 0.47 + 1) + 1.5 * math.sin(t * 1.11))
+        for f in entry["beat"].fx:
+            if f[0] == "shake":
+                ddx, ddy = K.shake(self.bs - f[1], amount=f[2])
+                dx, dy = dx + ddx, dy + ddy
+            elif f[0] == "punch":
+                z *= K.punch(self.bs - f[1], amount=f[2] if len(f) > 2 else 0.08, decay=5.0)
         c.save()
         c.translate(W / 2 + dx, H / 2 + dy)
         c.scale(z, z)
@@ -306,6 +312,9 @@ class Renderer:
                                                              MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 10)))
             c.drawString(text, -w / 2, 0, f, skia.Paint(AntiAlias=True, Color=rgba(WHITE, k)))
             c.restore()
+            if card.get("sub"):
+                ks = gfx.ease_out((s - card.get("sub_at", 0.8)) / 0.3)
+                gfx.draw_text(c, card["sub"], K.bold(34), W / 2, 650, color=(235, 235, 235), alpha=ks, tracking=3)
 
     def _rule(self, c, card, s, t):
         """RULE #n in rosso, poi il testo enorme con sottolineatura; dopo un po' si rimpicciolisce e resta."""
