@@ -33,6 +33,7 @@ MAN = Figure(height=300, fill=BLUE_ROBE)
 WIFE = Figure(height=280, fill=PINK_ROBE)
 BIG = Figure(height=1500, fill=(30, 28, 32), ink=(8, 8, 10))      # la tua sagoma in primo piano, di spalle
 SHAPE = Figure(height=1000, fill=(66, 68, 82), ink=(14, 14, 18))  # la cosa nella nebbia
+DAY_SHAPE = Figure(height=1350, fill=(34, 36, 46), ink=(18, 18, 24))  # la stessa, di giorno, in controluce
 
 MOODS = {
     # tipo di cielo, colore della nebbia, luce (1 = giorno pieno, 0 = buio)
@@ -410,21 +411,23 @@ def living(c, s, b, R):
     if act == "cover":
         cover = 0.12 + 0.86 * ease((R.bs - 0.4) / 2.0)
     elif act == "strip":
-        cover = 0.62
+        cover = 0.5
     shape_x = None
     if act == "strip":
-        shape_x = 1150 - 560 * ease(R.bs / max(0.1, _w(R, "in.", 2.5, end=True)))
+        shape_x = 1180 - 520 * ease(R.bs / max(0.1, _w(R, "in.", 2.5, end=True)))
 
     def view(c, r):
         G.sky(c, *r, "fog")
         G.fog(c, *r, s, a=0.85, col=(110, 120, 140), seed=6)
         if shape_x is not None:
-            SHAPE.draw(c, shape_x, 1900, bent(POSES["stand"], -42), facing=-1)
+            # di giorno è una sagoma scura contro la nebbia chiara
+            DAY_SHAPE.draw(c, shape_x, 2050, bent(POSES["stand"], -42), facing=-1)
+            G.vgrad(c, *r, (110, 120, 140), (110, 120, 140), a=0.2)
 
     G.window(c, *win, view, frame=(46, 42, 42))
     drop = _w(R, "in.", 99.0, end=True) if act == "strip" else 99.0
     if act == "strip" and R.bs >= drop - 0.3:
-        cover = min(1.0, 0.62 + 0.38 * ease((R.bs - drop + 0.3) / 0.25))
+        cover = min(1.0, 0.5 + 0.5 * ease((R.bs - drop + 0.3) / 0.25))
     if cover > 0:
         x0, y0, x1, y1 = win
         bw = (x1 - x0 + 40) * cover
@@ -471,12 +474,6 @@ def living(c, s, b, R):
     if act == "cover":
         J = YOU.draw(c, 800, 1560, breathe(blend(POSES["stand"], POSES["cover"], ease(R.bs / 0.5)), s), facing=-1)
     elif act == "strip":
-        # solo il braccio che tiene ferma la coperta sul bordo
-        arm = skia.Path()
-        arm.moveTo(700, 1300)
-        arm.quadTo(760, 1000, 860, 820)
-        c.drawPath(arm, G.P((44, 36, 32), StrokeWidth=58, Style=skia.Paint.kStroke_Style, StrokeCap=skia.Paint.kRound_Cap))
-        c.drawPath(arm, G.P((233, 224, 205), StrokeWidth=34, Style=skia.Paint.kStroke_Style, StrokeCap=skia.Paint.kRound_Cap))
         J = None
     elif act == "unplug":
         J = YOU.draw(c, 1200, 1560, breathe(POSES["kneel_reach"], s), facing=-1)

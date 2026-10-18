@@ -65,7 +65,7 @@ def dont_answer():
              card={"kind": "rule", "n": 1, "text": "COVER EVERY WINDOW", "at": 0.3},
              params={"act": "cover", "led": 1.0}, sfx=(("tape", 1.2, 0.5), ("tape", 2.0, 0.4)), music=0.45),
         Beat("If you can see out... it can see in.", card={"kind": None},
-             cam={"z": (1.9, 2.1), "c": ((930, 760), (925, 760))},
+             cam={"z": (1.55, 1.75), "c": ((880, 780), (875, 780))},
              params={"act": "strip", "led": 1.0}, sfx=(("boom", 0.3, 0.3), ("thud", "@in", 0.35)), music=0.55),
         # --- RULE #2 ---
         Beat("Rule number two: unplug every speaker. It talks through anything.", scene="living", clock="10:30 AM",
