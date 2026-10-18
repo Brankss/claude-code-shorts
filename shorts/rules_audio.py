@@ -4,8 +4,6 @@ Tutto procedurale tranne la voce (Kokoro, vedi voice.py). La musica si abbassa q
 (ducking) così la voce resta sempre davanti, come nei video di riferimento.
 """
 
-import math
-
 import numpy as np
 from scipy.signal import butter, resample_poly, sosfilt
 

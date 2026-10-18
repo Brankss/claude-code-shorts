@@ -20,7 +20,7 @@ import skia
 from . import gfx, voice
 from . import kinetic as K
 from .base import FPS, H, W
-from .gfx import mix, rgba
+from .gfx import rgba
 
 LIME = (206, 242, 64)
 ORANGE = (255, 160, 64)
@@ -460,7 +460,6 @@ class Renderer:
                 if t >= ws - 0.02:
                     cur = i
             font = K.heavy(68)
-            text = " ".join(words).upper()
             space = font.measureText(" ")
             widths = [font.measureText(w.upper()) for w in words]
             total = sum(widths) + space * (len(words) - 1)

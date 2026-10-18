@@ -556,11 +556,6 @@ def corridor(c, vx=540, vy=820, wall=(46, 84, 82), floor=(140, 58, 48), ceil=(30
             d0 = 0.15 + i * 0.22
             d1 = d0 + 0.1
 
-            def at(d, yy):
-                x = vx + side * (far_w / 2 + (W / 2 - far_w / 2) * d)
-                y = vy + (yy - vy) * (far_h / 2 + (H / 2 - far_h / 2) * d) / (far_h / 2) if False else None
-                return x
-
             xa = vx + side * (far_w / 2 + (W / 2 + 80 - far_w / 2) * (1 - d1) ** 2)
             xb = vx + side * (far_w / 2 + (W / 2 + 80 - far_w / 2) * (1 - d0) ** 2)
             ka, kb = (abs(xa - vx) - far_w / 2) / (W / 2 - far_w / 2), (abs(xb - vx) - far_w / 2) / (W / 2 - far_w / 2)

@@ -120,6 +120,12 @@ def bedroom(c, s, b, R):
     c.restore()
     G.darkness(c, 0.3, lights=[(115, 960, 520, 0.85), (700, 1640, 420, 0.7 * k), (830, 640, 360, 0.6)])
 
+# ---------- telefono ----------
+
+ALERT_LINES = [("STAY INDOORS.", (255, 255, 255)), ("DO NOT ANSWER", (255, 255, 255)), ("ANY VOICE,", (255, 255, 255)),
+               ("EVEN ONE YOU KNOW.", (255, 200, 80))]
+
+
 def phone(c, s, b, R):
     """Il telefono sul comodino (cavo, luce). params: ui = lock | alert | chat | receipt."""
     G.rect(c, -300, -300, 1380, 2220, (20, 18, 22))
@@ -508,7 +514,6 @@ def flashlight(c, s, b, R):
     G.rect(c, -60, -250, 60, 240, (82, 84, 92))
     for k in range(6):
         c.drawLine(-60, -150 + k * 60, 60, -150 + k * 60, G.P((60, 62, 70), StrokeWidth=4))
-    on = _p(b, "on_at")
     c.drawCircle(0, 20, 30, G.P((40, 40, 46)))
     c.drawCircle(0, 20, 30, G.P((160, 190, 255), 0.4 + 0.2 * math.sin(R.t * 4), StrokeWidth=4, Style=skia.Paint.kStroke_Style))
     c.restore()
