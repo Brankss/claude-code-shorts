@@ -10,6 +10,7 @@ from scipy.signal import butter, resample_poly, sosfilt
 from . import audio as A
 from . import voice
 from . import whatif_audio as WA
+from .rules import at_time
 
 SR = A.SR
 
@@ -304,8 +305,12 @@ def music(dur, tension_t, tension_v, rng):
 def limit(x, target_db=-16.5, ceiling=0.94):
     """Porta il volume medio a target_db e limita i picchi senza tagliarli: la gain scende subito
     (con 2-3 ms di anticipo) e risale piano (~120 ms)."""
-    from scipy.ndimage import maximum_filter1d, minimum_filter1d
     y = x * 10 ** ((target_db - 20 * np.log10(np.sqrt((x ** 2).mean()) + 1e-12)) / 20)
+    return _peaks(y, ceiling)
+
+
+def _peaks(y, ceiling):
+    from scipy.ndimage import maximum_filter1d, minimum_filter1d
     mono = np.abs(y).max(1) if y.ndim > 1 else np.abs(y)
     inst = np.minimum(1.0, ceiling / (maximum_filter1d(mono, int(0.005 * SR)) + 1e-9))
     held = minimum_filter1d(inst, int(0.05 * SR))
@@ -313,6 +318,46 @@ def limit(x, target_db=-16.5, ceiling=0.94):
     g = np.minimum(inst, slow)
     y = y * (g[:, None] if y.ndim > 1 else g)
     return np.clip(y, -0.99, 0.99)
+
+
+def lufs(x):
+    """Loudness integrata ITU-R BS.1770-4 (LUFS): filtro K, blocchi da 400 ms al 75%, gate assoluto
+    a -70 e relativo a -10. I coefficienti del filtro K sono quelli della norma a 48 kHz."""
+    assert SR == 48000
+    x = x if x.ndim > 1 else x[:, None]
+    from scipy.signal import lfilter
+    k = lfilter([1.0, -2.0, 1.0], [1.0, -1.99004745483398, 0.99007225036621],
+                lfilter([1.53512485958697, -2.69169618940638, 1.19839281085285],
+                        [1.0, -1.69065929318241, 0.73248077421585], x, axis=0), axis=0)
+    blk, hop = int(0.4 * SR), int(0.1 * SR)
+    p = np.cumsum(np.concatenate([np.zeros((1, k.shape[1])), k ** 2]), axis=0)
+    starts = np.arange(0, len(k) - blk + 1, hop)
+    z = ((p[starts + blk] - p[starts]) / blk).sum(1)
+    loud = -0.691 + 10 * np.log10(z + 1e-20)
+    z = z[loud > -70]
+    if not len(z):
+        return -70.0
+    rel = -0.691 + 10 * np.log10(z.mean()) - 10
+    z = z[-0.691 + 10 * np.log10(z) > rel]
+    return float(-0.691 + 10 * np.log10(z.mean()))
+
+
+def true_peak(x):
+    """Picco vero in dBTP (sovracampionato 4x)."""
+    return 20 * np.log10(np.abs(resample_poly(x, 4, 1, axis=0)).max() + 1e-12)
+
+
+def loudness(x, target=-14.0, tp=-1.0):
+    """Master per le piattaforme: -14 LUFS integrati e picchi veri sotto -1 dBTP (il reference è a -14,2)."""
+    ceiling = 10 ** ((tp - 0.4) / 20)
+    y = x
+    for _ in range(6):
+        y = _peaks(y * 10 ** ((target - lufs(y)) / 20), ceiling)
+        if abs(lufs(y) - target) < 0.15 and true_peak(y) <= tp:
+            break
+        if true_peak(y) > tp:
+            ceiling *= 10 ** (-0.3 / 20)
+    return y
 
 
 def far(x, rng=None):
@@ -353,13 +398,14 @@ def _voice_track(tl, story, n):
     return v
 
 
-def echo_wrong(tl):
-    """L'ultima battuta del narratore che torna, più lenta e più bassa: qualcosa la sta copiando."""
+def echo_wrong(tl, text=None):
+    """Una battuta del narratore che torna, più lenta e più bassa: qualcosa la sta copiando.
+    text = la battuta esatta (Story.end_echo); None = l'ultima detta dal narratore."""
     last = None
     for entry in tl.beats:
-        for t0, aud, who, filt in entry["takes"]:
-            if who == "narrator":
-                last = aud
+        takes = [aud for t0, aud, who, filt in entry["takes"] if who == "narrator"]
+        if takes and (text is None or entry["beat"].text.strip() == text.strip()):
+            last = np.concatenate(takes)
     if last is None:
         return np.zeros(1)
     a = resample_poly(last, SR, voice.SR)
@@ -405,25 +451,36 @@ def build(r):
     env = _f(np.abs(vo), "low", 4, order=1)
     env = np.clip(env / (env.max() + 1e-9) * 3, 0, 1)
     mus *= 1 - 0.55 * env
+    # Beat.duck: musica ed effetti si abbassano sulle parole che parlano di silenzio (la voce resta)
+    duck = np.ones(n)
+    for e in tl.beats:
+        for at, dur, depth in e["beat"].duck:
+            i0 = int((e["t0"] + at_time(e, at)) * SR)
+            shape = np.concatenate([np.linspace(1, 0, int(0.06 * SR)), np.zeros(int(dur * SR)),
+                                    np.linspace(0, 1, int(0.25 * SR))])
+            seg = 1 - depth * (1 - shape)
+            j1 = min(n, i0 + len(seg))
+            if j1 > i0 >= 0:
+                duck[i0:j1] = np.minimum(duck[i0:j1], seg[: j1 - i0])
+    mus *= duck
     mx.add(0.0, mus, 0.55, reverb=0.25)
     mx.add(0.0, vo, 1.0, reverb=0.04)
 
+    def ducked(t):
+        return float(duck[min(n - 1, max(0, int(t * SR)))])
+
     # effetti dei beat
-    for e in tl.beats:
+    for j, e in enumerate(tl.beats):
         b = e["beat"]
         for item in b.sfx:
-            name, off = item[0], item[1]
-            if isinstance(off, str):          # "@parola": quando viene detta (+ eventuale ritardo dopo il segno +)
-                word, _, extra = off[1:].partition("+")
-                hit = next((w for w in e["words"] if word.lower() in w.text.lower()), None)
-                off = (hit.start - e["t0"] if hit else 0.0) + (float(extra) if extra else 0.0)
+            name, off = item[0], at_time(e, item[1])     # secondi o "@parola[:end][+x]"
             if name.startswith("say:"):       # voce lontana nella nebbia: "say:voce:testo"
                 _, vid, text = name.split(":", 2)
                 words, aud = voice.say(text, vid, 0.95)
                 sig = far(resample_poly(aud, SR, voice.SR))
                 gain = item[2] if len(item) > 2 else 0.35
                 pan = item[3] if len(item) > 3 else float(rng.uniform(-0.6, 0.6))
-                mx.add(e["t0"] + off, sig, gain, pan=pan, reverb=0.5)
+                mx.add(e["t0"] + off, sig, gain * ducked(e["t0"] + off), pan=pan, reverb=0.5)
                 continue
             gain = item[2] if len(item) > 2 else 0.5
             pan = item[3] if len(item) > 3 else float(rng.uniform(-0.2, 0.2))
@@ -431,19 +488,42 @@ def build(r):
                 sig, at = echo_word(e, name[5:])
                 mx.add(at, sig, gain, pan=0.5, reverb=0.4)
                 continue
-            sig = echo_wrong(tl) if name == "echo_last" else SFX[name](rng)
-            mx.add(e["t0"] + off, sig, gain, pan=pan, reverb=0.25)
+            sig = echo_wrong(tl, story.end_echo) if name == "echo_last" else SFX[name](rng)
+            mx.add(e["t0"] + off, sig, gain * ducked(e["t0"] + off), pan=pan, reverb=0.25)
         card = b.card or {}
-        if card.get("kind") == "rule":
-            mx.add(e["t0"] + card.get("at", 0.0), WA.boom(1.8), 0.5, reverb=0.35)
-            mx.add(e["t0"] + card.get("at", 0.0), WA.click(900, 0.04), 0.4, reverb=0.2)
-            if card.get("reveal") is not None:
-                mx.add(e["t0"] + card.get("at", 0.0) + card["reveal"], WA.boom(1.4), 0.55, reverb=0.4)
-        elif card.get("kind") == "title":
-            mx.add(e["t0"] + card.get("at", 0.0), WA.boom(2.6), 0.6, reverb=0.5)
-        elif card.get("kind") == "question":
-            mx.add(e["t0"] + card.get("at", 0.0), WA.boom(2.0), 0.5, reverb=0.4)
+        kind = card.get("kind")
+        boom = card.get("boom", True)
+        at = e["t0"] + card.get("at", 0.0) if not isinstance(card.get("at", 0.0), str) else r.when(j, card["at"])
+        if kind == "rule":
+            if boom:
+                mx.add(at, WA.boom(1.8), 0.5, reverb=0.35)
+            mx.add(at, WA.click(900, 0.04), 0.4, reverb=0.2)
+            if card.get("reveal") is not None and card.get("reveal_boom", True):
+                mx.add(at + card["reveal"], WA.boom(1.4), 0.55, reverb=0.4)
+        elif kind == "title" and boom:
+            mx.add(at, WA.boom(2.6), 0.6, reverb=0.5)
+        elif kind == "question" and boom:
+            mx.add(at, WA.boom(2.0), 0.5, reverb=0.4)
+        elif kind == "black_reveal" and boom:
+            # il colpo più forte dell'episodio, nello stesso fotogramma della seconda riga
+            mx.add(r.when(j, card.get("l2_at", 1.0)), WA.boom(2.6), 0.8, reverb=0.5)
+        elif kind == "ledger":
+            for row in card["rows"]:
+                if "to" in row:   # un tick quando il numero si ferma sulla parola
+                    mx.add(r.when(j, row.get("at", 0.0)), WA.click(1800, 0.02), 0.35, reverb=0.15)
         if b.cut == "black":
             mx.add(e["t0"], WA.whoosh(0.6, rng, up=False), 0.15, reverb=0.3)
     out = mx.master(loop_tail=False)
-    return limit(out)
+    # Beat.mute: silenzio assoluto di tutto il mix (anche il tappeto), con bordi da 15 ms
+    gate = np.ones(len(out))
+    for e in tl.beats:
+        for at, dur in e["beat"].mute:
+            i0, i1 = int((e["t0"] + at_time(e, at)) * SR), int((e["t0"] + at_time(e, at) + dur) * SR)
+            f = int(0.015 * SR)
+            i0, i1 = max(0, i0), min(len(gate), i1)
+            if i1 > i0:
+                gate[i0:i1] = 0
+                gate[max(0, i0 - f):i0] = np.minimum(gate[max(0, i0 - f):i0], np.linspace(1, 0, i0 - max(0, i0 - f)))
+                gate[i1:i1 + f] = np.minimum(gate[i1:i1 + f], np.linspace(0, 1, len(gate[i1:i1 + f])))
+    out = out * gate[:, None]
+    return loudness(out)

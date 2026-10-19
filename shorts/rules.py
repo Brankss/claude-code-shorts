@@ -63,6 +63,9 @@ class Beat:
     tag: str = None               # cartellino: dove ("THROUGH THE GLASS")
     hud: tuple = None             # righe extra dell'HUD [(testo, colore[, secondi dopo cui si guasta in testo2, testo2])]
                                   # None = invariate, () = nessuna
+    mute: tuple = ()              # ((quando, durata), ...): silenzio assoluto di tutto il mix (voce compresa: solo nei vuoti)
+    duck: tuple = ()              # ((quando, durata, quanto 0..1), ...): abbassa musica ed effetti, la voce resta
+    clock_color: tuple = None     # colore dell'orologio dell'HUD da questo beat (None = invariato)
 
 
 @dataclass
@@ -83,8 +86,23 @@ class Story:
     char_filter: str = None       # "door" | "speaker" | None
     next_day: str = "DAY 2"
     end_time: tuple = ("11:59 PM", "12:00 AM")
+    end_label: str = None         # invito sul cartello finale (None = "FOLLOW FOR DAY 2")
+    end_glitch: float = 1.4       # secondi dopo cui DAY 1 si guasta in DAY 2
+    end_echo: str = None          # battuta del narratore che torna dalla cassa nel cartello finale (None = l'ultima)
     copy: dict = field(default_factory=dict)
     lead: float = 0.12            # silenzio prima della prima parola
+
+
+def at_time(entry, spec):
+    """Secondi dall'inizio del beat per un tempo scritto come numero o come "@parola", "@parola:end",
+    con un eventuale scarto "+0.2" / "-0.1". La parola è la prima che la contiene."""
+    if not isinstance(spec, str):
+        return float(spec)
+    m = re.match(r"@([^:+\-]+)(:end)?([+\-][\d.]+)?$", spec)
+    word, end, extra = m.group(1), m.group(2), m.group(3)
+    hit = next((w for w in entry["words"] if word.lower() in w.text.lower()), None)
+    t = 0.0 if hit is None else (hit.end if end else hit.start) - entry["t0"]
+    return t + (float(extra) if extra else 0.0)
 
 
 # ---------- timeline ----------
@@ -147,14 +165,16 @@ class Timeline:
         scene = None
         clock = ""
         hud = ()
+        clock_color = WHITE
         for b in story.beats:
             if b.scene is not None or b.cam is not None or not self.shots:
                 self.shots.append({"t0": t, "cam": b.cam or {}, "scene": b.scene or scene})
             scene = b.scene or scene
             clock = clock if b.clock is None else b.clock
             hud = hud if b.hud is None else b.hud
+            clock_color = clock_color if b.clock_color is None else tuple(b.clock_color)
             entry = {"beat": b, "t0": t, "scene": scene, "clock": clock, "takes": [], "words": [],
-                     "shot": len(self.shots) - 1, "hud": hud}
+                     "shot": len(self.shots) - 1, "hud": hud, "clock_color": clock_color}
             v, sp = (story.narrator, story.speed) if b.who == "narrator" else (story.char_voice, story.char_speed)
             v = b.voice or v
             pitch = b.pitch if b.pitch is not None else (story.char_pitch if b.who == "char" else 0.0)
@@ -263,9 +283,22 @@ class Renderer:
             K.flash(c, s - at, color=col, strength=0.55, decay=5.0)
         self._hud(c, idx, t)
         self._card(c, idx, t)
-        self._captions(c, t)
+        _, card = self._active_card(idx)
+        if not (card and card.get("kind") == "black_reveal") and entry["scene"] != "endcard":
+            self._captions(c, t)            # sul nero le parole sono già la card; sul cartello finale niente
         img = self.surface.makeImageSnapshot()
         return img.toarray(colorType=skia.kRGBA_8888_ColorType)
+
+    def when(self, j, spec):
+        """Tempo assoluto di spec (numero dall'inizio del beat j, oppure "@parola[:end][+x]" cercata
+        dal beat j in avanti: una card può restare a schermo mentre la voce va avanti)."""
+        if not isinstance(spec, str):
+            return self.tl.beats[j]["t0"] + float(spec)
+        word = re.match(r"@([^:+\-]+)", spec).group(1).lower()
+        for e in self.tl.beats[j:]:
+            if any(word in w.text.lower() for w in e["words"]):
+                return e["t0"] + at_time(e, spec)
+        return self.tl.beats[j]["t0"]
 
     def word(self, needle, entry=None, end=False):
         """Secondi dall'inizio del beat in cui viene detta la prima parola che contiene needle (None se non c'è)."""
@@ -298,7 +331,7 @@ class Renderer:
         c.drawCircle(x + 6, y - 8, 6, skia.Paint(AntiAlias=True, Color=rgba(RED, a)))
         gfx.draw_text(c, self.story.day, K.bold(24), x + 20, y, color=(235, 90, 80), alpha=a, align="left", tracking=2)
         big = gfx.mono(72, "SemiBold")
-        gfx.draw_text(c, hhmm, big, x, y + 74, color=WHITE, alpha=a, align="left")
+        gfx.draw_text(c, hhmm, big, x, y + 74, color=entry["clock_color"], alpha=a, align="left")
         gfx.draw_text(c, ap, K.bold(24), x + big.measureText(hhmm) + 10, y + 74, color=(220, 220, 225), alpha=a,
                       align="left")
         c.drawLine(x, y + 96, x + 250, y + 96, skia.Paint(AntiAlias=True, StrokeWidth=2, Color=rgba((255, 255, 255), 0.35 * a)))
@@ -374,6 +407,10 @@ class Renderer:
                           align="left", tracking=2)
             f = gfx.fit_font(K.heavy, card["text"], W - 200, 50)
             gfx.draw_text(c, card["text"], f, 100, y + 112, color=WHITE, alpha=k, align="left")
+        elif kind == "black_reveal":
+            self._black_reveal(c, card, j, t)
+        elif kind == "ledger":
+            self._ledger(c, card, j, t, s)
         elif kind == "question":
             k = gfx.ease_out(s / 0.3)
             f = bebas(150)
@@ -392,6 +429,83 @@ class Renderer:
             if card.get("sub"):
                 ks = gfx.ease_out((s - card.get("sub_at", 0.8)) / 0.3)
                 gfx.draw_text(c, card["sub"], K.bold(36), W / 2, 730, color=(235, 235, 235), alpha=ks, tracking=3)
+
+    def _black_reveal(self, c, card, j, t):
+        """Twist su nero in due righe: la prima bianca entra con la voce, la seconda rossa e più grande
+        compare di colpo, nello stesso fotogramma del colpo (vedi rules_audio.build)."""
+        c.drawRect(skia.Rect(0, 0, W, H), skia.Paint(Color=rgba((2, 1, 4))))
+        t1 = self.when(j, card.get("l1_at", 0.0))
+        t2 = self.when(j, card.get("l2_at", 1.0))
+        for text, t0, size, col, y in ((card["l1"], t1, 120, WHITE, 860), (card["l2"], t2, 210, (230, 40, 36), 1080)):
+            g = t - t0
+            if g < 0:
+                continue
+            f = bebas(size)
+            w = f.measureText(text)
+            sc = min(1.0, 980 / w) * (1.0 if col == WHITE else 1.0 + 0.1 * max(0.0, 1 - g / 0.12))
+            c.save()
+            c.translate(W / 2 + (6 * math.sin(g * 120) if col != WHITE and g < 0.15 else 0), y)
+            c.scale(sc, sc)
+            if col != WHITE:
+                c.drawString(text, -w / 2, 0, f, skia.Paint(AntiAlias=True, Color=rgba(col, 0.45),
+                                                             MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 30)))
+            c.drawString(text, -w / 2, 0, f, skia.Paint(AntiAlias=True, Color=rgba(col)))
+            c.restore()
+
+    def _ledger(self, c, card, j, t, s):
+        """Registro di casa: card scura al centro, righe che contano e si fermano sulla parola detta."""
+        rows = card["rows"]
+        k = K.back_out(s / 0.28) if s < 0.28 else 1.0
+        a = min(1.0, s / 0.15)
+        x0, x1 = 90, W - 90
+        top = card.get("y", 600)
+        bottom = top + 124 + 120 * len(rows)
+        c.save()
+        c.translate(W / 2, (top + bottom) / 2)
+        c.scale(0.9 + 0.1 * k, 0.9 + 0.1 * k)
+        c.translate(-W / 2, -(top + bottom) / 2)
+        r = skia.RRect.MakeRectXY(skia.Rect(x0, top, x1, bottom), 28, 28)
+        c.drawRRect(r, skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.5 * a),
+                                  MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 24)))
+        c.drawRRect(r, skia.Paint(AntiAlias=True, Color=rgba((14, 14, 18), 0.94 * a)))
+        c.drawRRect(r, skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=2,
+                                  Color=rgba((255, 255, 255), 0.18 * a)))
+        c.drawCircle(x0 + 46, top + 62, 7, skia.Paint(AntiAlias=True, Color=rgba(RED, a)))
+        gfx.draw_text(c, card.get("title", "HOUSE LOG"), gfx.mono(36, "SemiBold"), x0 + 66, top + 75,
+                      color=(240, 240, 244), alpha=a, align="left", tracking=3)
+        c.drawLine(x0 + 40, top + 100, x1 - 40, top + 100,
+                   skia.Paint(AntiAlias=True, StrokeWidth=2, Color=rgba((255, 255, 255), 0.22 * a)))
+        for i, row in enumerate(rows):
+            y = top + 176 + 120 * i
+            ra = a * min(1.0, max(0.0, (s - 0.12 - 0.08 * i) / 0.2))
+            if ra <= 0:
+                continue
+            col = tuple(row.get("color", (235, 235, 240)))
+            gfx.draw_text(c, row["label"], gfx.mono(31, "Medium"), x0 + 46, y, color=(180, 182, 192), alpha=ra,
+                          align="left", tracking=2)
+            frac = None
+            if "to" in row:
+                stop = self.when(j, row.get("at", 0.0))
+                dur = row.get("dur", 0.8)
+                p = gfx.ease_out(min(1.0, max(0.0, (t - (stop - dur)) / dur)))
+                v = row.get("from", 0) + (row["to"] - row.get("from", 0)) * p
+                text = row.get("fmt", "{}").format(int(round(v)))
+                if row.get("max"):
+                    frac = v / row["max"]
+            else:
+                text = str(row.get("value", ""))
+                if row.get("max") and isinstance(row.get("fill"), (int, float)):
+                    frac = row["fill"] / row["max"]
+            if row.get("approx"):
+                text = "≈ " + text
+            gfx.draw_text(c, text, gfx.mono(50, "SemiBold"), x1 - 46, y + 6, color=col, alpha=ra, align="right")
+            if row.get("bar") and frac is not None:
+                by = y + 30
+                c.drawRoundRect(skia.Rect(x0 + 46, by, x1 - 46, by + 8), 4, 4,
+                                skia.Paint(AntiAlias=True, Color=rgba((255, 255, 255), 0.12 * ra)))
+                c.drawRoundRect(skia.Rect(x0 + 46, by, x0 + 46 + (x1 - x0 - 92) * max(0.0, min(1.0, frac)), by + 8), 4, 4,
+                                skia.Paint(AntiAlias=True, Color=rgba(col, ra)))
+        c.restore()
 
     def _rule(self, c, card, s, t):
         """RULE #n in rosso, poi il testo enorme con sottolineatura; dopo un po' si rimpicciolisce e resta."""
@@ -487,9 +601,10 @@ class Renderer:
 
     # --- cartello finale ---
 
-    def endcard(self, c, s, beat, glitch_at=1.4):
+    def endcard(self, c, s, beat):
         """Titolo della serie, DAY 1 che si guasta in DAY 2 rosso, "FOLLOW FOR DAY 2"."""
         st = self.story
+        glitch_at = st.end_glitch
         c.drawRect(skia.Rect(0, 0, W, H), skia.Paint(Color=rgba((6, 6, 8))))
         a = min(1.0, s / 0.4)
         f = bebas(120)
@@ -525,7 +640,7 @@ class Renderer:
         gfx.draw_text(c, clock, gfx.mono(46, "Medium"), W / 2, 990, color=(225, 225, 230), alpha=a, tracking=4)
         k = gfx.ease_out((s - 0.6) / 0.4)
         if k > 0:
-            label = f"FOLLOW FOR {st.next_day}"
+            label = st.end_label or f"FOLLOW FOR {st.next_day}"
             pf = K.bold(34)
             pw = pf.measureText(label)
             r = skia.RRect.MakeRectXY(skia.Rect(W / 2 - pw / 2 - 40, 1080, W / 2 + pw / 2 + 40, 1160), 40, 40)
