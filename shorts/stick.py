@@ -89,6 +89,7 @@ class Figure:
     extras: list = field(default_factory=list)   # "mustache", "red_sleeve", "hat", "backpack", "scarf"
     shade: float = 0.0             # 0..1 quanto è in ombra (luce bassa)
     coat: tuple = None             # colore dell'impermeabile col cappuccio (es. giallo), None = niente
+    neck: float = 1.0              # >1 allunga il collo (la cosa col collo spezzato), disegnato come un arto
 
     def joints(self, x, y, pose, facing=1):
         """Posizioni (px) di tutte le articolazioni; (x, y) = anca."""
@@ -106,7 +107,8 @@ class Figure:
         neck = (x + up[0] * tl, y + up[1] * tl)
         sho = (x + up[0] * (tl - 0.04 * H), y + up[1] * (tl - 0.04 * H))
         ha = math.radians(pose["torso"] + pose["head"])
-        head = (neck[0] + math.sin(ha) * facing * (r + 0.015 * H), neck[1] - math.cos(ha) * (r + 0.015 * H))
+        hd = (r + 0.015 * H) * self.neck
+        head = (neck[0] + math.sin(ha) * facing * hd, neck[1] - math.cos(ha) * hd)
         J = {"hip": hip, "neck": neck, "head": head, "sho": sho, "r": r}
         for s in ("l", "r"):
             a1 = pose[s + "sh"] + pose["torso"]
@@ -171,6 +173,8 @@ class Figure:
                                          StrokeCap=skia.Paint.kRound_Cap, Color=rgba(red, alpha)))
         hx, hy = J["head"]
         r = J["r"]
+        if self.neck > 1.0:
+            limb([J["neck"], J["head"]], fill, w * 0.8)
         if self.coat:
             # impermeabile: trapezio dalle spalle alle ginocchia, maniche, cappuccio attorno alla testa
             coat = mix(self.coat, (20, 22, 30), self.shade * 0.6)

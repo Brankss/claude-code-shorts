@@ -176,19 +176,25 @@ def dont_answer():
         char_voice="af_heart", char_speed=0.9, char_pitch=2.5, char_name="ELLIE", char_tag="THROUGH THE GLASS",
         char_filter="glass",
         copy={
-            "title": "Would you answer her? (DON'T ANSWER · Day 1)",
+            "title": "She knows the password nobody said. Do you answer? (DON'T ANSWER · Day 1)",
             "lines": [
-                "Your mom texts: \"if you hear me outside... that's not me.\" Then every phone in town goes off.",
-                "At midnight, the girl next door is lost in the fog outside your window, crying and holding your mom's "
-                "phone. She knows the family password nobody ever said out loud. And something is right behind her.",
+                "Imagine it's midnight. Ellie from next door is lost in the fog outside your window, holding your "
+                "mom's phone. She knows the family password. Nobody ever said it out loud.",
                 "",
-                "Do you answer her? TYPE IT. DON'T SAY IT.",
+                "Now look behind her.",
                 "",
-                "Fiction. Animated story with a synthetic narrator voice.",
+                "Rule #4: Do not answer any voice, even one you know.",
+                "",
+                "So... do you answer her? Type it. Don't say it.",
+                "",
+                "DON'T ANSWER, Day 1. A Rule Number Four story. Subscribe for Day 2.",
+                "",
+                "Fiction · animated · synthetic narrator voice",
             ],
-            "hashtags": ["#dontanswer", "#survival", "#whatwouldyoudo", "#scarystories", "#rules"],
-            "tags": ["don't answer", "survival story", "what would you do", "pov", "horror story", "animated story",
-                     "scary story", "fog", "rules", "day 1", "stickman"],
+            "hashtags": ["#rulenumberfour", "#dontanswer", "#povhorror", "#horrorstory", "#animatedhorror"],
+            "tags": ["rule number four", "don't answer", "pov horror", "horror story", "animated horror",
+                     "rules horror", "survival story", "what would you do", "scary story", "fog", "day 1",
+                     "stickman"],
         },
     )
 
