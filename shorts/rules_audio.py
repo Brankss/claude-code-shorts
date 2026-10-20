@@ -473,6 +473,12 @@ def build(r):
     for j, e in enumerate(tl.beats):
         b = e["beat"]
         for item in b.sfx:
+            if item[0] == "echo_last" and item[1] == "end":
+                # l'eco finisce con il video: è l'ultima cosa che si sente
+                sig = echo_wrong(tl, story.end_echo)
+                gain = item[2] if len(item) > 2 else 0.6
+                mx.add(max(0.0, D - len(sig) / SR - 0.05), sig, gain, pan=0.0, reverb=0.25)
+                continue
             name, off = item[0], at_time(e, item[1])     # secondi o "@parola[:end][+x]"
             if name.startswith("say:"):       # voce lontana nella nebbia: "say:voce:testo"
                 _, vid, text = name.split(":", 2)

@@ -89,6 +89,7 @@ class Story:
     end_label: str = None         # invito sul cartello finale (None = "FOLLOW FOR DAY 2")
     end_glitch: float = 1.4       # secondi dopo cui DAY 1 si guasta in DAY 2
     end_echo: str = None          # battuta del narratore che torna dalla cassa nel cartello finale (None = l'ultima)
+    clock_avoid: tuple = ("6:42 AM", "7:15 AM")   # orari del reference 3: l'orologio non ci passa mai sopra
     copy: dict = field(default_factory=dict)
     lead: float = 0.12            # silenzio prima della prima parola
 
@@ -326,6 +327,8 @@ class Renderer:
             if cur < p:
                 cur += 24 * 60
             cur = p + (cur - p) * gfx.ease_out(s / 0.7)
+            while " ".join(_fmt_clock(cur)) in self.story.clock_avoid:
+                cur += 1
         hhmm, ap = _fmt_clock(cur)
         x, y = HUD_X, 292
         c.drawCircle(x + 6, y - 8, 6, skia.Paint(AntiAlias=True, Color=rgba(RED, a)))
@@ -341,7 +344,10 @@ class Renderer:
         for line in entry["hud"]:
             txt, col = line[0], line[1]
             if len(line) > 3:
-                at = line[2] if not isinstance(line[2], str) else (self.word(line[2][1:], entry) or 0.0)
+                at = line[2]
+                if isinstance(at, str):     # "@parola": se non è in questo beat, è già successo prima
+                    at = self.word(at[1:], entry)
+                    at = -1e9 if at is None else at
                 back = line[5] if len(line) > 5 else None
                 if s >= at and (back is None or s < at + back):
                     g = s - at
@@ -451,6 +457,9 @@ class Renderer:
                                                              MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 30)))
             c.drawString(text, -w / 2, 0, f, skia.Paint(AntiAlias=True, Color=rgba(col)))
             c.restore()
+        if card.get("sub") and t >= t2:
+            gfx.draw_text(c, card["sub"], gfx.mono(34, "Medium"), W / 2, 1190, color=(160, 162, 170),
+                          alpha=min(1.0, (t - t2) / 0.25), tracking=4)
 
     def _ledger(self, c, card, j, t, s):
         """Registro di casa: card scura al centro, righe che contano e si fermano sulla parola detta."""

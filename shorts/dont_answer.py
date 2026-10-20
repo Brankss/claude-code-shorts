@@ -635,7 +635,7 @@ def endcard(c, s, b, R):
     """Cartello finale + la cassa staccata che si accende da sola mentre torna la voce."""
     R.endcard(c, s, b)
     G.fog(c, -300, 380, 1380, 760, s * 2 + 4, a=0.2, col=(140, 144, 152), seed=22, n=5, stretch=3.5)
-    led_at = next((it[1] for it in b.sfx if it[0] == "echo_last" and not isinstance(it[1], str)), 1.9) - 0.1
+    led_at = next((0.0 if isinstance(it[1], str) else it[1] for it in b.sfx if it[0] == "echo_last"), 1.9) - 0.1
     on = ease((s - led_at) / 0.5) * (0.7 + 0.3 * math.sin(s * 9))
     if on > 0:
         G.rrect(c, 490, 1290, 590, 1302, 4, (230, 240, 255), on)
