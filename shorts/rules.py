@@ -89,7 +89,7 @@ class Story:
     end_label: str = None         # invito sul cartello finale (None = "FOLLOW FOR DAY 2")
     end_glitch: float = 1.4       # secondi dopo cui DAY 1 si guasta in DAY 2
     end_echo: str = None          # battuta del narratore che torna dalla cassa nel cartello finale (None = l'ultima)
-    clock_avoid: tuple = ("6:42 AM", "7:15 AM")   # orari del reference 3: l'orologio non ci passa mai sopra
+    clock_avoid: tuple = ("6:42 AM", "7:15 AM", "6:42 PM", "7:15 PM")   # orari del reference 3: mai sull'orologio
     copy: dict = field(default_factory=dict)
     lead: float = 0.12            # silenzio prima della prima parola
 

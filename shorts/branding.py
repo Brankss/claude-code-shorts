@@ -3,7 +3,7 @@
 Stesso stile del format "rules": illustrazione piatta, stickman crema senza faccia, rosso delle card,
 nebbia blu-grigia. Le foto profilo funzionano anche a 40 px (dentro il cerchio di TikTok).
 
-    python -m shorts.branding --name "RULE NUMBER FOUR" --story dont_answer --at 92.5 \\
+    python -m shorts.branding --name "RULE NUMBER FOUR" --story dont_answer --at 71.8 \\
         --rules "COVER EVERY WINDOW|UNPLUG EVERY SPEAKER|FAMILY PASSWORD|DON'T ANSWER ANY VOICE" --out brand
 """
 
@@ -271,7 +271,7 @@ def main():
     ap.add_argument("--tagline", default="Survive the night. Follow the rules.")
     ap.add_argument("--frame", default=None, help="PNG del video per la copertina")
     ap.add_argument("--story", default=None, help="in alternativa a --frame: la storia da cui prendere il fotogramma")
-    ap.add_argument("--at", type=float, default=92.5, help="secondo del fotogramma (con --story)")
+    ap.add_argument("--at", type=float, default=71.8, help="secondo del fotogramma (con --story)")
     ap.add_argument("--title", default="DON'T ANSWER")
     ap.add_argument("--day", default="DAY 1")
     ap.add_argument("--hook", default="DO YOU ANSWER HER?")

@@ -4,7 +4,7 @@ Kit completo per aprire l'account (TikTok, Instagram, YouTube) e pubblicare l'ep
 (`out/rules_001.mp4`, DON'T ANSWER · Day 1). I testi da incollare sono in inglese perché il pubblico è
 quello inglese/USA. Grafiche in `brand/`, rigenerabili con:
 
-    python -m shorts.branding --name "RULE NUMBER FOUR" --story dont_answer --at 92.5 \
+    python -m shorts.branding --name "RULE NUMBER FOUR" --story dont_answer --at 71.8 \
         --rules "COVER EVERY WINDOW|UNPLUG EVERY SPEAKER|FAMILY PASSWORD|DON'T ANSWER ANY VOICE" --out brand
 
 Nome, bio e caption sono usciti da un workflow: 3 agenti hanno proposto 18 nomi, 2 giudici li hanno votati
@@ -85,15 +85,15 @@ Verifica il numero di telefono del canale: senza, YouTube non ti fa caricare min
 
 ## 4. Episodio 1: cosa caricare
 
-- **Video**: `out/rules_001.mp4` (1080x1920, 60 fps, 1:40, audio originale, nessun watermark). Sta nei limiti
+- **Video**: `out/rules_001.mp4` (1080x1920, 60 fps, 1:15, audio originale, nessun watermark). Sta nei limiti
   di tutte e tre (TikTok fino a 10 min, Reels e Shorts fino a 3 min). Su ogni piattaforma carica sempre questo
   file, mai quello riscaricato da un'altra app con il watermark.
 - **Copertina**: `brand/cover_day1.png`. Ellie nel fascio della torcia con la cosa piegata dietro, titolo,
   DAY 1, domanda in basso. Titolo e domanda stanno nel ritaglio 3:4 delle griglie profilo.
   - TikTok: "Modifica copertina": carica l'immagine se l'app te lo fa fare, altrimenti scegli il fotogramma
-    a 1:32 e scrivi `DO YOU ANSWER HER?`.
+    a 1:11 e scrivi `DO YOU ANSWER HER?`.
   - Instagram: "Modifica copertina" → "Aggiungi dal rullino" → la cover. Controlla l'anteprima della griglia.
-  - YouTube: se l'app ti dà "miniatura", usa la cover; altrimenti fotogramma a 1:32.
+  - YouTube: se l'app ti dà "miniatura", usa la cover; altrimenti fotogramma a 1:11.
 
 ### TikTok
 Caption:
@@ -201,14 +201,14 @@ Se preferisci programmare: TikTok Studio da computer, Instagram dalle impostazio
 
 | Quando | Cosa |
 |---|---|
-| **lun 19/10, 22:30** | Day 1 **solo su TikTok**. Fissa il commento, prima ora sui commenti con le risposte pronte. Registra gli handle di riserva |
-| mar 20/10 | Day 1 su Shorts e Reels, ognuno con la sua caption e lo stesso commento fissato. Su TikTok, 1 risposta-video di 10-20 s alla domanda migliore (fermo immagine, HUD, una riga del narratore, nessuna risposta nuova). Inizia a contare BLUE KITE vs NOT TONIGHT |
-| mer 21/10 | Card delle regole: `brand/rules_day1_9x16.png` (foto TikTok / Storia) e `brand/rules_day1_4x5.png` (feed IG), caption "Which one breaks first?". Controllo delle 48 ore: se i commenti a Day 1 stanno ancora accelerando, Day 2 esce stasera invece di domani |
-| **gio 22/10, 22:30** | **Day 2** su TikTok (limite massimo: ven 23/10; una serie ha bisogno del secondo episodio). Prima riga sui commenti ("Most of you answered her."), outro sempre uguale, nuovo commento fissato a due scelte |
-| ven 23/10 | Day 2 su Shorts e Reels. Su TikTok niente episodio: video sondaggio di 10 s ("Was it ever really Ellie? YES / NO"), stesso sondaggio nelle Storie IG |
-| sab 24/10 | Giorno leggero: 15-20 minuti di commenti in personaggio. Script del Day 3 chiuso |
-| dom 25/10 | Analisi della settimana: watch time medio, % di chi arriva alla fine, rewatch, commenti ogni 1000 views, follow per post, chi ha vinto il dilemma. Teaser del Day 3 (schermo nero, HUD che passa a DAY 3) |
-| lun 26/10 | Day 3 |
+| **mar 20/10, 22:30** | Day 1 (v2, 75 s) **solo su TikTok**. Fissa il commento, prima ora sui commenti con le risposte pronte. Registra gli handle di riserva |
+| mer 21/10 | Day 1 su Shorts e Reels, ognuno con la sua caption e lo stesso commento fissato. Su TikTok, 1 risposta-video di 10-20 s alla domanda migliore (fermo immagine, HUD, una riga del narratore, nessuna risposta nuova). Inizia a contare BLUE KITE vs NOT TONIGHT |
+| gio 22/10 | Card delle regole: `brand/rules_day1_9x16.png` (foto TikTok / Storia) e `brand/rules_day1_4x5.png` (feed IG), caption "Which one breaks first?". Controllo delle 48 ore: se i commenti a Day 1 stanno ancora accelerando, Day 2 esce stasera invece di domani |
+| **ven 23/10, 22:30** | **Day 2** su TikTok (limite massimo: sab 24/10; una serie ha bisogno del secondo episodio). Prima riga sui commenti ("Most of you answered her."), outro sempre uguale, nuovo commento fissato a due scelte |
+| sab 24/10 | Day 2 su Shorts e Reels. Su TikTok niente episodio: video sondaggio di 10 s ("Was it ever really Ellie? YES / NO"), stesso sondaggio nelle Storie IG |
+| dom 25/10 | Giorno leggero: 15-20 minuti di commenti in personaggio. Script del Day 3 chiuso |
+| lun 26/10 | Analisi della settimana: watch time medio, % di chi arriva alla fine, rewatch, commenti ogni 1000 views, follow per post, chi ha vinto il dilemma. Teaser del Day 3 (schermo nero, HUD che passa a DAY 3) |
+| mar 27/10 | Day 3 |
 | **sab 31/10** | Day 4: finale di serie o colpo di scena, la sera di Halloween |
 
 **Day 2, 3 e 4 non esistono ancora.** Il motore è pronto e il Day 1 lo dimostra, ma per stare dentro le date

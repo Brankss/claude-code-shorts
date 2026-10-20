@@ -93,7 +93,7 @@ def bedroom(c, s, b, R):
             mom = Figure(height=360, fill=(54, 60, 74), ink=(30, 32, 40))
             mom.draw(c, mx, y1 - 100, bent(POSES["stand"]), facing=-1)
             G.vgrad(c, *r, fogc, fogc, a=0.18)
-            if R.bs > _w(R, "backyard"):
+            if R.bs > _w(R, "fog", end=True):
                 ring_at(c, mx, y1 - 300, R.t, a=0.55, r=220)
         elif R.bs - gone < 1.2:
             ring_at(c, mx, y1 - 300, R.t, a=0.55 * (1 - (R.bs - gone) / 1.2), r=220)
@@ -538,10 +538,10 @@ def front_walk(c, s, b, R):
         ey = 1290 + (90 * k if st == "step" else (90 if st in ("near", "lean") else 0))
         ex = 560 + 30 * math.sin(R.t * 0.4)
         if st == "lost":
-            pose = bent(dict(POSES["point"], rsh=80 + 10 * math.sin(R.t * 1.3)))
+            pose = dict(POSES["point"], rsh=80 + 10 * math.sin(R.t * 1.3))   # dritta: il collo piegato darebbe la risposta
             facing = -1
         else:
-            pose = bent(dict(POSES["point"], rsh=78))
+            pose = dict(POSES["point"], rsh=78)
             facing = 1 if st in ("turn", "step", "near", "lean") else -1
         sh = _p(b, "shape", 0.0)
         if sh:
@@ -602,7 +602,10 @@ def ellie_phone(c, s, b, R):
     c.drawCircle(-50, 440, 70, G.P((233, 224, 205)))
 
     def chat(c, r):
-        G.chat_screen(c, r, "Sweetie", [("blue kite. never out loud.", True, -9), ("ok. text me every 5 min", False, -9)],
+        # la stessa chat del tuo telefono, vista dall'altra parte: è davvero il telefono della mamma
+        G.chat_screen(c, r, "Sweetie", [("password?", False, -9), ("blue kite. never out loud.", True, -9),
+                                        ("voices stopped.", True, -9), ("walking home. stay quiet.", True, -9),
+                                        ("ok. text me every 5 min", False, -9)],
                       t=9, status="")
     G.phone(c, 0, 0, 470, 980, chat, glow_a=0.35)
     c.restore()
@@ -619,7 +622,7 @@ def window_tap(c, s, b, R):
     w, h = (300, 380) if small else (520, 600)
     G.glow(c, cx, cy, 520, (230, 236, 250), 0.25)
     shiver = 0.0
-    tap = _w(R, _p(b, "tap_word", "One"))
+    tap = _p(b, "tap_at", 0.42) if not b.text else _w(R, _p(b, "tap_word", "One"))
     if R.bs >= tap:
         shiver = math.sin(R.t * 60) * 4 * max(0.0, 1 - (R.bs - tap) / 0.5)
     G.rect(c, cx - w / 2 - 20, cy - h / 2 - 20, cx + w / 2 + 20, cy + h / 2 + 20, (40, 40, 44))
