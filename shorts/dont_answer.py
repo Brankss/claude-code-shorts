@@ -19,6 +19,7 @@ from . import gfx
 from . import kinetic as K
 from . import pov_gfx as G
 from .gfx import mix, rgba
+from .rules import at_time
 from .stick import POSES, Figure, blend, breathe, ease
 
 YELLOW = (250, 204, 36)
@@ -46,6 +47,12 @@ MOODS = {
 
 def _p(b, key, default=None):
     return b.params.get(key, default)
+
+
+def _t(R, b, key, default=None):
+    """Come _p, ma un tempo scritto "@parola[:end][+x]" diventa secondi dall'inizio del beat."""
+    v = b.params.get(key, default)
+    return at_time(R.entry, v) if isinstance(v, str) and v.startswith("@") else v
 
 
 def _w(R, needle, default=99.0, end=False):
@@ -208,7 +215,7 @@ def house_ext(c, s, b, R):
     G.sky(c, -300, -300, 1380, 2220, sky)
     dark = 1 - light
     # luci della strada: aloni morbidi nella nebbia che muoiono dal fondo verso di noi
-    die = _p(b, "lamps_die_at")
+    die = _t(R, b, "lamps_die_at")
     lamps = ((1250, 900), (-200, 950), (880, 1180), (120, 1240))
     for i, (lx, ly) in enumerate(lamps):
         on = 1.0
@@ -274,7 +281,7 @@ def window_view(c, s, b, R):
             # Ellie: casa a destra, gancio con l'impermeabile (o vuoto)
             G.rect(c, 940, 860, 1120, 1240, (110, 128, 146))
             hook = _p(b, "hook", True)
-            out_at = _p(b, "ellie_out_at")
+            out_at = _t(R, b, "ellie_out_at")
             ex = 1010
             if hook and (out_at is None or R.bs < out_at):
                 G.rrect(c, ex - 22, 990, ex + 22, 1066, 14, YELLOW)
@@ -325,7 +332,7 @@ def window_view(c, s, b, R):
     gap = _p(b, "gap")
     if gap is not None:
         # la coperta sulla finestra: resta solo uno spiraglio (che si può richiudere a metà)
-        close = _p(b, "close_at")
+        close = _t(R, b, "close_at")
         g = gap
         if close is not None and R.bs >= close:
             g = gap * (1 - 0.5 * ease((R.bs - close) / 1.0))
@@ -538,7 +545,7 @@ def front_walk(c, s, b, R):
             facing = 1 if st in ("turn", "step", "near", "lean") else -1
         sh = _p(b, "shape", 0.0)
         if sh:
-            k2 = ease((R.bs - _p(b, "shape_at", 0.0)) / 1.4) if isinstance(sh, (int, float)) else 1.0
+            k2 = ease((R.bs - _t(R, b, "shape_at", 0.0)) / 1.4) if isinstance(sh, (int, float)) else 1.0
             lean = 0.0
             if sh == "lean":
                 lean = ease(R.bs / 2.0)
