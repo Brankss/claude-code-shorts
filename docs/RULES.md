@@ -54,7 +54,7 @@ Stile grafico:
 - `shorts/rules.py`: la timeline la decide la voce. Ogni `Beat` è una battuta, divisa in pezzi a ogni "..." per avere pause vere. Il file contiene anche le didascalie, l'HUD con l'orologio che scorre, le card (regola, titolo, domanda), il cartellino del personaggio, il cartello finale con il glitch e le inquadrature: i beat consecutivi senza scena o camera nuova restano nella stessa inquadratura, così la camera continua senza salti.
 - `shorts/stick.py`: lo stickman con le pose (in piedi, seduto a terra, mani sulle ginocchia, spingere, carponi, telefono in mano...), la camminata e il respiro.
 - `shorts/pov_gfx.py`: la scenografia. Stanze, finestre con vista, porte con spioncino e luce sotto, librerie, divani, lampade, letti, skyline con luci e incendi, nebbia, pioggia, polvere, buio con le zone illuminate, fascio di torcia, telefono (lock screen, allerta, chat) e spioncino.
-- `shorts/rules_audio.py`: tappeto drone in re minore con sub e battito che segue la tensione di ogni beat, ducking sotto la voce, effetti procedurali (il vero tono delle allerte d'emergenza a 853+960 Hz, vibrazione, colpi alla porta, sirena, blackout, glitch, din-don da altoparlante...) e un limiter che porta il volume medio a quello del riferimento (circa -17 dB RMS).
+- `shorts/rules_audio.py`: tappeto drone in re minore con sub e battito che segue la tensione di ogni beat, ducking sotto la voce, effetti procedurali (un allarme inventato, vibrazione, colpi alla porta, sirena, blackout, glitch, din-don da altoparlante...). Dalla v2: silenzio vero (`Beat.mute`), musica che tace sulle parole di silenzio (`Beat.duck`), colpi automatici delle card disattivabili, eco di una battuta precisa come ultimo suono e master a **-14 LUFS** con picco vero sotto -1 dBTP (misuratore BS.1770 nostro, verificato contro ffmpeg).
 - Post-produzione: `POST_SOFT` in `formats.py`, con il bloom solo sulle luci vere, la vignetta e la grana.
 
 ## 4. Episodio 1: DON'T ANSWER (Day 1)
@@ -92,6 +92,34 @@ Dettagli per chi riguarda il video (nessuno li nomina):
 - L'eco finale è la domanda del narratore rallentata che esce dalla cassa staccata.
 
 **Durata**: circa 100 s, di cui 95 di storia (il riferimento ne dura 91).
+
+### Episodio 1, v2 (20/10, prima della pubblicazione)
+
+Rifatto applicando il [playbook](PLAYBOOK.md) uscito dall'analisi del [reference 3](REF3.md). Tre riscritture indipendenti (chirurgia, catena causale, inizio e fine), fusione, due critici avversari, correzioni. Stessa storia, stesse scene, stesso copy di lancio.
+
+| | v1 | v2 |
+|---|---|---|
+| Durata | 100 s | **75 s** |
+| Velocità della voce | 2,4 parole/s | ~2,6 parole/s (speed 1.31) |
+| "fog" e "voice" | a ~15 s | **entro 2,5 s** |
+| Regole 1-3 | lista | **catena**: ti vede dentro → copri; allora parla dalla TV con la voce della mamma → stacca; la casa di Ellie parla ancora e non c'è nessuno, la voce della mamma non prova niente → password |
+| Colpi di sub | ~9 | **5**: titolo, regola #1, blackout, rivelazione della #4, twist |
+| La torcia | contraddiceva la regola #1 | **una scelta** ("A light isn't a voice... would you?"), che costa ("It saw your light.") |
+| Registro | nessuno | **HOUSE LOG · DAY 1** dopo il blackout: 9/9 finestre e 4/4 casse dette, PHONE 100% e WORDS SAID OUT LOUD 0 per chi mette in pausa (semi del Day 2) |
+| Il minuto | sparso su tre orari | **11:57**: orologio rosso, e la ricevuta della mamma diventa "READ 11:51 PM" in rosso davanti a te |
+| Twist | sulla chat | **su nero in due righe**: "NOBODY EVER SAID IT." / "IT WAS READ." con 0,12 s di silenzio assoluto prima dell'ultima parola e il colpo sulla sua consonante |
+| Outro | a 26 s dalla fine | detto al minuto 1:05 e **ripreso dalla cassa staccata come ultimo suono** |
+| Cartello finale | 4,3 s | 2 s, "FOLLOW · STAY QUIET" |
+| Loudness | -17,1 LUFS | **-14,2 LUFS** |
+
+Cose trovate dai critici e corrette prima del render:
+- Kokoro legge "read" isolato al presente: la battuta dice "it was... red", e la card scrive READ.
+- Ellie era disegnata con il collo piegato, la posa "presa" del vicino: dava la risposta del dilemma. Ora è dritta.
+- La chat della mamma mostrava i puntini di scrittura con il tuo messaggio solo "Delivered", impossibile su un telefono vero.
+- Il telefono in mano a Ellie ora mostra la stessa chat del tuo: è davvero il telefono della mamma.
+- L'orologio che scorre non passa mai da 6:42 o 7:15 (gli orari del reference), nemmeno per un fotogramma.
+
+Copertina: fotogramma a 1:11.8 (Ellie nel fascio, la cosa dietro, la tua sagoma in primo piano).
 
 ## 5. Note oneste
 
