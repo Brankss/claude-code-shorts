@@ -707,7 +707,7 @@ def crowd(c, h, t, d, mode="cling", n=14, light=1.0, slap=0.0, shove=0.0, a=1.0,
     settle 0..1: dopo il silenzio si fermano, le braccia scendono. Sott'acqua niente occhi (IN SIGHT 0 è vero)."""
     night = light < 0.6
     for i, (hf, x, side) in enumerate(CROWD[:n]):
-        if hf < d - 0.6:          # più di mezzo piede sotto: non si vede niente
+        if hf <= d + 0.02:        # testa sotto il pelo dell'acqua: non si vede niente (né sagoma né occhi)
             continue
         if mode == "mill":
             base = pose("mill")
