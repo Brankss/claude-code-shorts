@@ -1,5 +1,7 @@
 """Storie del format "rules". Ogni storia è una funzione che restituisce una rules.Story."""
 
+import numpy as np
+
 from . import dont_answer as DA
 from .rules import Beat, Story
 
@@ -212,4 +214,172 @@ def dont_answer():
     )
 
 
-STORIES = {"dont_answer": dont_answer}
+def low_tide():
+    """LOW TIDE, Day 1: "The Road". Gli zombie non sanno nuotare, quindi l'isola di Eli è salva... finché la
+    marea scende e il mare diventa una strada. Eli è dalla parte sbagliata a 9 minuti dall'allagamento; il nonno,
+    per abitudine, suona la campana; il suono sull'acqua porta 14 morti sulla strada dietro di lui; il box sui pali
+    lo salva e la marea li copre. A mezzanotte meno venti l'acqua scende: non sono annegati.
+
+    Ogni numero nasce da qualcosa che si vede (il cartello, la campana, il palo in pollici, la scala dipinta) e
+    l'ora dell'HUD muove la marea di tutte le scene (low_tide.tide). Vedi docs/LOW_TIDE.md."""
+    from . import low_tide as LT
+    from . import low_tide_audio  # noqa: F401  (registra gli effetti in rules_audio.SFX)
+    rising =(("TIDE ↑ RISING", (150, 200, 255)),)
+    falling = (("TIDE ↓ FALLING", REDV),)
+    beats = [
+        # ---------- hook: il genere entro mezzo secondo, la strada che esce dal mare su "out" (colpo 1) ----------
+        Beat("Zombies can't swim. So Eli's island is safe... until the tide goes out.", scene="world", clock="",
+             cam={"z": (1.45, 1.0), "c": ((-60, 900), (470, 960))}, music=0.35,
+             params={"act": "hook", "h": 17.35, "hit_at": "@swim-0.05", "drain_at": "@out-0.2"},
+             sfx=(("wave", "@swim-0.45", 0.7, 0.2), ("drain", "@out-0.25", 0.6), ("boom", "@out", 0.5))),
+        Beat("Twice a day, the sea becomes a road.", scene="bay", cut="fade",
+             cam={"z": (1.0, 1.06), "c": ((540, 1080), (540, 1060))},
+             card={"kind": "title", "boom": False, "dur": 2.0, "y": 260, "size": 170, "hud": True},
+             params={"act": "lapse", "lapse": True}, sfx=(("drain", 0.4, 0.3), ("wave", 1.6, 0.3))),
+        # ---------- 6:04: dalla parte sbagliata. Il cartello dà il 9:00 e l'1:46 ----------
+        Beat("Day one.", scene="world", clock="6:04 PM", hud=rising, card={"kind": None}, hold=0.4,
+             cam={"z": (1.75, 1.8), "c": ((-260, 860), (-250, 860))}, music=0.45,
+             params={"act": "arrive", "slap_at": "@one-0.05"},
+             sfx=(("run_steps", 0.0, 0.4), ("thud", "@one", 0.7))),
+        Beat("The road floods in nine minutes...", scene="sign", cam={"z": (1.0, 1.08), "c": ((540, 860), (540, 840))},
+             params={"peel_at": "@nine"}, sfx=(("click", "@nine", 0.4),)),
+        Beat("and Eli's on the wrong side.", scene="world", cam={"z": (2.3, 2.4), "c": ((-290, 800), (-280, 800))},
+             params={"act": "hide", "dies_at": "@wrong"}, sfx=(("power_off", "@wrong", 0.25),)),
+        # ---------- l'allarme li porta via; lui va in silenzio ----------
+        Beat("He sets off a car alarm.", scene="world", cam={"z": (2.3, 2.2), "c": ((-330, 760), (-360, 740))},
+             params={"act": "throw", "throw_at": "@sets"}, sfx=(("whoosh", "@car", 0.3),)),
+        Beat("The dead run to the sound.", scene="bay", cam={"z": (1.9, 1.95), "c": ((370, 1650), (360, 1650))},
+             params={"act": "run", "go_at": "@run-0.2", "alarm": True},
+             sfx=(("car_alarm", 0.0, 0.45, -0.6), ("run_crowd", "@run", 0.45, -0.3)), music=0.55),
+        Beat("So Eli walks. Silent. But silent is slow.", clock="6:09 PM", roll=2.4, scene="bay",
+             cam={"z": (1.3, 1.35), "c": ((560, 1260), (560, 1220))},
+             params={"act": "walk", "alarm": True}, duck=(("@Silent", 1.4, 0.85),),
+             sfx=(("car_alarm", 0.0, 0.22, -0.7),), music=0.4),
+        Beat("The alarm dies...", clock="6:12 PM", scene="bay", cam={"z": (1.35, 1.4), "c": ((560, 1220), (560, 1200))},
+             params={"act": "walk", "alarm": True, "alarm_off": "@dies", "alarm_off_tag": True},
+             sfx=(("car_alarm", 0.0, 0.22, -0.7), ("alarm_stop", "@dies", 0.35, -0.7))),
+        Beat("and the sea gets there first.", clock="6:13 PM", roll=1.2,
+             params={"act": "walk", "alarm": True, "alarm_off": -1, "short": "@first", "flats_label": True},
+             sfx=(("water_rush", 0.2, 0.45),)),
+        # ---------- il nonno: vede solo l'acqua e il nipote. Il suono è un gesto d'amore (colpo 2) ----------
+        Beat("Grandpa sees the water...", scene="binoc", cam={"z": (1.0, 1.12), "c": ((560, 1080), (570, 1120))},
+             sfx=(("static", 0.0, 0.08),), music=0.45),
+        Beat("and rings the bell. For forty years, it's meant: come home.", scene="gallery",
+             cam={"z": (1.0, 1.08), "c": ((540, 900), (520, 880))}, params={"grab_at": 0.0, "ring_at": "@bell"},
+             sfx=(("bell", "@bell", 0.8, 0.4), ("boom", "@bell", 0.4), ("bell", "@years", 0.55, 0.4),
+                  ("bell", "@home", 0.55, 0.4)), music=0.5),
+        Beat("But over calm water...", scene="world", clock="6:14 PM",
+             cam={"z": (2.6, 2.7), "c": ((150, 900), (150, 890))}, params={"act": "walk_side", "turn_at": 0.12},
+             sfx=(("bell", 0.15, 0.4, 0.7),)),
+        Beat("sound carries.", scene="bay", cam={"z": (1.0, 1.02), "c": ((540, 1080), (540, 1060))},
+             params={"act": "rings", "ring_at": 0.0, "calm": True}, sfx=(("bell", 0.0, 0.35, 0.6),)),
+        Beat("Five. Ten. Fourteen... on the road behind him.", clock="6:15 PM", scene="bay",
+             cam={"z": (1.55, 1.6), "c": ((540, 1440), (540, 1400))},
+             params={"act": "count", "c1": "@Five", "c2": "@Ten", "c3": "@Fourteen", "calm": True},
+             sfx=(("bell", "@Five-0.4", 0.4, 0.6), ("bell", "@Ten-0.4", 0.4, 0.6), ("bell", "@Fourteen-0.4", 0.4, 0.6),
+                  ("run_crowd", "@Five", 0.4, -0.3)), music=0.6),
+        # ---------- il bordo delle FLATS: guadare no, il box sì ----------
+        Beat("Ahead: a quarter mile of water, rising. Six inches of moving water can knock you down.",
+             scene="world", clock="6:19 PM", cam={"z": (1.6, 1.5), "c": ((450, 960), (470, 940))},
+             params={"act": "edge", "h": (18.30, 18.333), "ghost_at": "@Six-0.1"},
+             sfx=(("water_rush", 0.0, 0.3), ("splash", "@down", 0.35))),
+        Beat("Last resort: a box on stilts. Some tidal roads really have them.", clock="6:20 PM",
+             cam={"z": (1.6, 1.3), "c": ((420, 980), (430, 860))},
+             params={"act": "run", "run_at": "@box", "head_at": "@stilts", "chip_at": "@Some"},
+             sfx=(("run_steps", "@box", 0.35),), music=0.65),
+        Beat("He climbs. He hauls the rope ladder up.", clock="6:21 PM",
+             cam={"z": (1.5, 1.55), "c": ((420, 900), (430, 900))},
+             params={"act": "climb", "in_at": "@hauls-0.25", "haul_at": "@hauls", "arrive_at": "@rope-0.3"},
+             sfx=(("ladder", "@climbs", 0.4), ("ladder", "@hauls", 0.5), ("run_crowd", 0.2, 0.45, -0.4))),
+        # ---------- il suono costa: il box trema (colpo 3); Biscuit zitto ----------
+        Beat("But the ladder clatters... and the box shakes. So Biscuit... not one bark.", scene="world",
+             cam={"z": (2.35, 2.45), "c": ((LT.XB + 30, 990), (LT.XB + 30, 1000))},
+             params={"act": "shake", "cutaway": True, "shove_at": "@shakes-0.3", "zip_at": "@not-0.35",
+                     "calm_at": "@bark"},
+             fx=(("shake", "@shakes-0.3", 16), ("shake", "@shakes+0.35", 10)),
+             sfx=(("ladder", "@clatters", 0.55), ("thud", "@shakes-0.3", 0.8), ("boom", "@shakes-0.3", 0.45),
+                  ("creak", "@shakes", 0.5), ("yip", "@Biscuit-0.5", 0.35), ("zip", "@not-0.35", 0.4)),
+             duck=(("@not", 1.3, 0.9),), music=0.7),
+        # ---------- la marea sale: 4, 5, 6 piedi, le teste spariscono (IN SIGHT 14 -> 0 solo sul 6) ----------
+        Beat("Four feet.", clock="7:34 PM", cut="black", cam={"z": (2.05, 2.1), "c": ((500, 1000), (500, 990))},
+             params={"act": "rise", "tick_at": 0.0, "cutaway": True}, sfx=(("water_rise", 0.0, 0.4),), music=0.5),
+        Beat("Five.", clock="7:55 PM", params={"act": "rise", "gauge_hot": 5, "cutaway": True}),
+        Beat("Six... and the sea swallows them.", clock="8:20 PM", roll=2.1,
+             params={"act": "rise", "gauge_hot": 6, "egg_at": "@swallows:end+0.2", "cutaway": True}, hold=0.35,
+             sfx=(("gulp", "@sea", 0.4),)),
+        # ---------- il respiro: l'unico verde (IN SIGHT 0) ----------
+        Beat("Zero in sight. The road opens at one forty-six.", clock="10:00 PM", hold=0.5,
+             cam={"z": (1.6, 1.65), "c": ((LT.XB + 60, 900), (LT.XB + 60, 900))},
+             params={"act": "high", "cutaway": True, "insight": False},
+             card={"kind": "ledger", "title": "REFUGE BOX · NIGHT 1", "y": 520, "rows": [
+                 {"label": "IN SIGHT", "from": 14, "to": 0, "at": "@Zero", "dur": 0.8, "color": [90, 220, 120]},
+                 {"label": "ROAD OPENS", "value": "1:46 AM", "color": [255, 200, 90]},
+                 {"label": "HIGH TIDE · FLOOR AT 9", "value": "8 FT", "color": [120, 180, 255], "bar": True,
+                  "max": 9, "fill": 8},
+                 {"label": "PHONE", "value": "0%", "color": [255, 90, 80]}]},
+             music=0.35),
+        # ---------- il minuto: Biscuit prima, poi tre graffi bagnati, poi le parole ----------
+        Beat("Eleven thirty-nine. Biscuit stares down.", clock="11:39 PM", clock_color=RED_CLOCK, hud=falling,
+             card={"kind": None}, hold=1.0, cam={"z": (3.3, 3.5), "c": ((LT.XB + 10, 800), (LT.XB + 10, 810))},
+             params={"act": "freeze", "cutaway": True, "freeze_at": "@thirty", "hand_at": "@down"},
+             sfx=(("wet_scrape", "@down:end+0.15", 0.5), ("wet_scrape", "@down:end+0.45", 0.55),
+                  ("wet_scrape", "@down:end+0.72", 0.6)), duck=((0.0, 2.5, 0.8),), music=0.7),
+        Beat("The water's back to six feet.", cam={"z": (2.2, 2.3), "c": ((LT.STILTS[1], 1010), (LT.STILTS[1], 1000))},
+             params={"act": "gauge_down", "h": (23.64, 23.66), "gauge_hot": 6, "cutaway": True},
+             sfx=(("drip", 0.3, 0.4),)),
+        # ---------- la rivelazione: il fascio del faro, 1, 6, 14 (colpo 4) ----------
+        Beat("One head... six... all fourteen. Looking up.", scene="down", clock="11:52 PM", roll=3.0,
+             cam={"z": (1.0, 1.1), "c": ((540, 1000), (540, 1020))},
+             params={"s1": "@One", "s2": "@six", "s3": "@fourteen"},
+             fx=(("shake", "@fourteen", 12),),
+             sfx=(("beam", "@One-0.2", 0.3), ("beam", "@six-0.2", 0.3), ("beam", "@fourteen-0.2", 0.3),
+                  ("boom", "@fourteen", 0.5), ("heartbeat", "@Looking", 0.4)), music=0.9),
+        # ---------- twist su nero: muto vero prima dell'ultima parola, colpo 5 sulla sua ultima consonante ----------
+        Beat("Zombies can't swim... They don't drown.", scene="black", clock="", hold=1.0,
+             card={"kind": "black_reveal", "l1": "ZOMBIES CAN'T SWIM.", "l2": "THEY DON'T DROWN.",
+                   "l1_at": "@Zombies", "l2_at": "@drown:end-0.18"},
+             mute=(("@drown-0.2", 0.12),), music=0.6),
+        # ---------- cartello finale: la minaccia di domani. L'ultimo suono è la campana ----------
+        Beat("At dawn... Grandpa rings the bell.", scene="end_map", caption=False, hold=1.5, card={"kind": None},
+             cam={"z": (1.0, 1.04), "c": ((540, 960), (540, 980)), "sway": 0.3},
+             params={"l1_at": 0.1, "l2_at": "@rings", "l3_at": "@bell:end+0.15"},
+             sfx=(("bell", "@bell:end+0.35", 0.55, 0.5),), music=0.3),
+    ]
+    return Story(
+        name="low_tide", title="LOW TIDE", day="DAY 1", place="WREN ISLAND", beats=beats, scenes=LT.SCENES,
+        speed=1.32, bed=sea_bed,
+        copy={
+            "title": "Zombies can't swim... so why is the road the scariest place? (LOW TIDE · Day 1)",
+            "lines": [
+                "Zombies can't swim. So Eli's island is safe, until the tide goes out and the sea becomes a road.",
+                "",
+                "Nine minutes before the road floods, he's on the wrong side. Then Grandpa rings the bell.",
+                "",
+                "How would you warn Grandpa without making a sound?",
+                "",
+                "LOW TIDE, Day 1. Follow for Day 2.",
+                "",
+                "Real life: tidal roads publish safe crossing times. Never race the tide, never walk into "
+                "moving water.",
+                "Fiction · animated · synthetic narrator voice",
+            ],
+            "hashtags": ["#lowtide", "#zombie", "#animatedstory", "#survival", "#horrorstory"],
+            "tags": ["low tide", "zombie story", "zombies can't swim", "tidal road", "causeway", "survival story",
+                     "animated horror", "what would you do", "refuge box", "day 1", "stickman", "cliffhanger"],
+        },
+    )
+
+
+def sea_bed(tl, D, rng):
+    """Mare e vento per tutto il video: risacca lenta, più forte sulle scene all'aperto."""
+    from . import rules_audio as RA
+    n = int(D * RA.SR)
+    t = np.arange(n) / RA.SR
+    surf = RA._f(rng.normal(0, 1, n), "band", [180, 1400]) * (0.55 + 0.45 * np.sin(2 * np.pi * t / 7.5) ** 2)
+    wind = RA._f(rng.normal(0, 1, n), "band", [400, 2600]) * (0.4 + 0.25 * np.sin(2 * np.pi * t / 11 + 1))
+    x = 0.05 * surf + 0.02 * wind
+    fade = np.minimum(1, t / 0.6) * np.minimum(1, (D - t) / 0.8)
+    return x * fade
+
+
+STORIES = {"low_tide": low_tide, "dont_answer": dont_answer}

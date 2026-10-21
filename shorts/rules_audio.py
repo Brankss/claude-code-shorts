@@ -465,6 +465,9 @@ def build(r):
     mus *= duck
     mx.add(0.0, mus, 0.55, reverb=0.25)
     mx.add(0.0, vo, 1.0, reverb=0.04)
+    if story.bed is not None:         # ambiente della storia (mare, vento...), sotto la voce come la musica
+        bed = story.bed(tl, D, rng)[:n]
+        mx.add(0.0, bed * (1 - 0.4 * env[:len(bed)]) * duck[:len(bed)], 1.0, reverb=0.2)
 
     def ducked(t):
         return float(duck[min(n - 1, max(0, int(t * SR)))])

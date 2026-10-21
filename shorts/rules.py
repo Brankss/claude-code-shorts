@@ -66,6 +66,7 @@ class Beat:
     mute: tuple = ()              # ((quando, durata), ...): silenzio assoluto di tutto il mix (voce compresa: solo nei vuoti)
     duck: tuple = ()              # ((quando, durata, quanto 0..1), ...): abbassa musica ed effetti, la voce resta
     clock_color: tuple = None     # colore dell'orologio dell'HUD da questo beat (None = invariato)
+    roll: float = 0.7             # secondi in cui l'orologio scorre dall'ora del beat prima a questa
 
 
 @dataclass
@@ -92,6 +93,7 @@ class Story:
     clock_avoid: tuple = ("6:42 AM", "7:15 AM", "6:42 PM", "7:15 PM")   # orari del reference 3: mai sull'orologio
     copy: dict = field(default_factory=dict)
     lead: float = 0.12            # silenzio prima della prima parola
+    bed: object = None            # tappeto d'ambiente: funzione (tl, durata, rng) -> segnale (vedi rules_audio.build)
 
 
 def at_time(entry, spec):
@@ -244,11 +246,12 @@ class Renderer:
         dx = sway * (4 * math.sin(t * 0.61) + 2 * math.sin(t * 1.37))
         dy = sway * (3 * math.sin(t * 0.47 + 1) + 1.5 * math.sin(t * 1.11))
         for f in entry["beat"].fx:
+            at = at_time(entry, f[1])       # secondi dall'inizio del beat, o "@parola"
             if f[0] == "shake":
-                ddx, ddy = K.shake(self.bs - f[1], amount=f[2])
+                ddx, ddy = K.shake(self.bs - at, amount=f[2])
                 dx, dy = dx + ddx, dy + ddy
             elif f[0] == "punch":
-                z *= K.punch(self.bs - f[1], amount=f[2] if len(f) > 2 else 0.08, decay=5.0)
+                z *= K.punch(self.bs - at, amount=f[2] if len(f) > 2 else 0.08, decay=5.0)
         c.save()
         c.translate(W / 2 + dx, H / 2 + dy)
         c.scale(z, z)
@@ -281,7 +284,7 @@ class Renderer:
         if b.cut == "flash":
             K.flash(c, s, strength=0.8)
         for name, at, col in (fx for fx in b.fx if fx[0] == "flash"):
-            K.flash(c, s - at, color=col, strength=0.55, decay=5.0)
+            K.flash(c, s - at_time(entry, at), color=col, strength=0.55, decay=5.0)
         self._hud(c, idx, t)
         self._card(c, idx, t)
         _, card = self._active_card(idx)
@@ -322,11 +325,12 @@ class Renderer:
         a = min(1.0, s / 0.25) if idx == 0 or not self.tl.beats[idx - 1]["clock"] else 1.0
         cur = _minutes(entry["clock"])
         prev = self.tl.beats[idx - 1]["clock"] if idx > 0 else ""
-        if prev and prev != entry["clock"] and s < 0.7:
+        roll = entry["beat"].roll
+        if prev and prev != entry["clock"] and s < roll:
             p = _minutes(prev)
             if cur < p:
                 cur += 24 * 60
-            cur = p + (cur - p) * gfx.ease_out(s / 0.7)
+            cur = p + (cur - p) * gfx.ease_out(s / roll)
             while " ".join(_fmt_clock(cur)) in self.story.clock_avoid:
                 cur += 1
         hhmm, ap = _fmt_clock(cur)
