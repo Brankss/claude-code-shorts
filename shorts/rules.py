@@ -67,6 +67,7 @@ class Beat:
     duck: tuple = ()              # ((quando, durata, quanto 0..1), ...): abbassa musica ed effetti, la voce resta
     clock_color: tuple = None     # colore dell'orologio dell'HUD da questo beat (None = invariato)
     roll: float = 0.7             # secondi in cui l'orologio scorre dall'ora del beat prima a questa
+    cap_y: float = None           # y delle didascalie in questo beat (None = CAPTION_Y): per non coprire l'azione
 
 
 @dataclass
@@ -152,7 +153,7 @@ def _minutes(s):
 
 
 def _fmt_clock(minutes):
-    minutes = int(round(minutes)) % (24 * 60)
+    minutes = int(math.floor(minutes + 1e-6)) % (24 * 60)    # come un orologio vero: 6:12 fino allo scoccare delle 6:13
     h, mi = divmod(minutes, 60)
     ap = "AM" if h < 12 else "PM"
     return f"{(h % 12) or 12}:{mi:02d}", ap
@@ -200,7 +201,7 @@ class Timeline:
                 for ch in _chunks(entry["words"]):
                     self.captions.append({"t0": ch[0].start - 0.04, "words": [(w.text, w.start) for w in ch],
                                           "who": b.who, "end": ch[-1].end, "beat_t1": t,
-                                          "name": b.name, "tag": b.tag})
+                                          "name": b.name, "tag": b.tag, "y": b.cap_y or CAPTION_Y})
         for i, cap in enumerate(self.captions):
             nxt = self.captions[i + 1]["t0"] if i + 1 < len(self.captions) else math.inf
             cap["t1"] = min(nxt, cap["end"] + 0.45, cap["beat_t1"] + 0.05)
@@ -335,6 +336,12 @@ class Renderer:
                 cur += 1
         hhmm, ap = _fmt_clock(cur)
         x, y = HUD_X, 292
+        # piastra scura morbida: l'HUD si legge su qualsiasi scena (cielo rosa, legno, mappa)
+        sub = gfx.mono(25, "Medium")
+        wmax = max([300] + [sub.measureText(str(line[0])) + 3 * len(str(line[0])) for line in entry["hud"]])
+        plate = skia.RRect.MakeRectXY(skia.Rect(x - 24, y - 40, x + wmax + 30, y + 146 + 34 * len(entry["hud"])), 18, 18)
+        c.drawRRect(plate, skia.Paint(AntiAlias=True, Color=rgba((4, 6, 12), 0.42 * a),
+                                      MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 6)))
         c.drawCircle(x + 6, y - 8, 6, skia.Paint(AntiAlias=True, Color=rgba(RED, a)))
         gfx.draw_text(c, self.story.day, K.bold(24), x + 20, y, color=(235, 90, 80), alpha=a, align="left", tracking=2)
         big = gfx.mono(72, "SemiBold")
@@ -342,9 +349,9 @@ class Renderer:
         gfx.draw_text(c, ap, K.bold(24), x + big.measureText(hhmm) + 10, y + 74, color=(220, 220, 225), alpha=a,
                       align="left")
         c.drawLine(x, y + 96, x + 250, y + 96, skia.Paint(AntiAlias=True, StrokeWidth=2, Color=rgba((255, 255, 255), 0.35 * a)))
-        gfx.draw_text(c, self.story.place, gfx.mono(22, "Medium"), x, y + 128, color=(170, 172, 180), alpha=a,
+        gfx.draw_text(c, self.story.place, sub, x, y + 130, color=(200, 202, 210), alpha=a,
                       align="left", tracking=3)
-        yy = y + 162
+        yy = y + 166
         for line in entry["hud"]:
             txt, col = line[0], line[1]
             if len(line) > 3:
@@ -356,13 +363,13 @@ class Renderer:
                 if s >= at and (back is None or s < at + back):
                     g = s - at
                     if g < 0.3 and int(g * 30) % 2 == 0:
-                        gfx.draw_text(c, txt, gfx.mono(22, "Medium"), x + 6 * math.sin(g * 90), yy, color=(255, 60, 60),
+                        gfx.draw_text(c, txt, sub, x + 6 * math.sin(g * 90), yy, color=(255, 60, 60),
                                       alpha=a, align="left", tracking=3)
-                        yy += 32
+                        yy += 34
                         continue
                     txt, col = line[3], line[4] if len(line) > 4 else (255, 80, 70)
-            gfx.draw_text(c, txt, gfx.mono(22, "Medium"), x, yy, color=col, alpha=a, align="left", tracking=3)
-            yy += 32
+            gfx.draw_text(c, txt, sub, x, yy, color=col, alpha=a, align="left", tracking=3)
+            yy += 34
 
     # --- card: regole, titolo, domanda finale ---
 
@@ -452,7 +459,7 @@ class Renderer:
                 continue
             f = bebas(size)
             w = f.measureText(text)
-            sc = min(1.0, 980 / w) * (1.0 if col == WHITE else 1.0 + 0.1 * max(0.0, 1 - g / 0.12))
+            sc = min(1.0, (980 if col == WHITE else 860) / w) * (1.0 if col == WHITE else 1.0 + 0.1 * max(0.0, 1 - g / 0.12))
             c.save()
             c.translate(W / 2 + (6 * math.sin(g * 120) if col != WHITE and g < 0.15 else 0), y)
             c.scale(sc, sc)
@@ -473,6 +480,7 @@ class Renderer:
         x0, x1 = 90, W - 90
         top = card.get("y", 600)
         bottom = top + 124 + 120 * len(rows)
+        c.drawRect(skia.Rect(0, 0, W, H), skia.Paint(Color=rgba((0, 0, 0), 0.4 * a)))   # la scena dietro si abbassa
         c.save()
         c.translate(W / 2, (top + bottom) / 2)
         c.scale(0.9 + 0.1 * k, 0.9 + 0.1 * k)
@@ -480,7 +488,7 @@ class Renderer:
         r = skia.RRect.MakeRectXY(skia.Rect(x0, top, x1, bottom), 28, 28)
         c.drawRRect(r, skia.Paint(AntiAlias=True, Color=rgba((0, 0, 0), 0.5 * a),
                                   MaskFilter=skia.MaskFilter.MakeBlur(skia.kNormal_BlurStyle, 24)))
-        c.drawRRect(r, skia.Paint(AntiAlias=True, Color=rgba((14, 14, 18), 0.94 * a)))
+        c.drawRRect(r, skia.Paint(AntiAlias=True, Color=rgba((14, 14, 18), 0.98 * a)))
         c.drawRRect(r, skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=2,
                                   Color=rgba((255, 255, 255), 0.18 * a)))
         c.drawCircle(x0 + 46, top + 62, 7, skia.Paint(AntiAlias=True, Color=rgba(RED, a)))
@@ -593,7 +601,7 @@ class Renderer:
             scale = min(1.0, 960 / total)
             pop = 0.86 + 0.14 * K.back_out(age / 0.16)
             c.save()
-            c.translate(W / 2, CAPTION_Y)
+            c.translate(W / 2, cap["y"])
             c.scale(pop * scale, pop * scale)
             x = -total / 2
             stroke = skia.Paint(AntiAlias=True, Style=skia.Paint.kStroke_Style, StrokeWidth=13,
@@ -609,7 +617,7 @@ class Renderer:
                 x += widths[i] + space
             c.restore()
             if who == "char" and self.story.char_name:
-                self._pill(c, CAPTION_Y - 88, min(1.0, age / 0.15))
+                self._pill(c, cap["y"] - 88, min(1.0, age / 0.15))
             break
 
     # --- cartello finale ---

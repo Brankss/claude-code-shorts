@@ -51,14 +51,15 @@ ELI_START, ELI_EDGE = 18 + 5 / 60, 18 + 19 / 60
 
 PX = 34.0               # px per piede: uno zombie di 6 ft è alto 204 px
 Y0 = 1180.0             # y delle FLATS (quota 0)
-X0, X1 = 40.0, 900.0    # inizio e fine della strada
-XF0, XF1 = 380.0, 660.0  # le FLATS
+X0, X1 = 40.0, 1400.0   # inizio e fine della strada
+XF0, XF1 = 380.0, 1100.0  # le FLATS: nelle inquadrature del box vanno oltre il bordo destro
 END = 5.0               # le estremità della strada stanno 5 ft sopra le FLATS
 BOX_E = 9.0             # pavimento del box: l'alta marea (8 ft) arriva un piede sotto le assi
 BOX_W = 200.0
 XB = XF0 + 6            # centro del box: a cavallo del bordo delle FLATS
-LH_X = 1040.0           # faro
-POST_X = XF0 + 140      # palo con la scala in pollici, sulle FLATS
+LH_X = 1520.0           # faro (sull'isola, fuori dalle inquadrature del box)
+POST_X = XF0 + 150      # palo con la scala in pollici, sulle FLATS
+WADE = 600.0            # il guado del "fantasma": un quarto di miglio disegnato in 600 px
 LADDER_X = XB - 74      # la scala di corda pende sul pendio asciutto
 
 
@@ -127,6 +128,7 @@ def hours(R, b):
 
 
 KEYS = [  # ora, cielo alto, cielo medio, orizzonte, mare, mare profondo, luce
+    (13.0, (64, 120, 190), (130, 180, 222), (206, 226, 236), (46, 120, 150), (14, 50, 70), 1.0),
     (17.3, (60, 92, 150), (236, 156, 104), (255, 210, 140), (52, 104, 134), (18, 44, 64), 1.0),
     (18.05, (40, 48, 98), (176, 98, 112), (248, 146, 96), (46, 76, 112), (14, 30, 50), 0.82),
     (18.45, (22, 28, 66), (74, 62, 108), (150, 96, 112), (32, 50, 82), (10, 20, 38), 0.58),
@@ -187,9 +189,10 @@ POSES_LT = {
     "shamble": dict(torso=10, head=12, lsh=82, lel=8, rsh=70, rel=18, lhip=4, lkn=0, rhip=-4, rkn=0),
     "lean_car": dict(torso=30, head=16, lsh=70, lel=20, rsh=96, rel=10, lhip=-6, lkn=0, rhip=-14, rkn=0),
     "cling": dict(torso=-4, head=-10, lsh=158, lel=8, rsh=146, rel=20, lhip=6, lkn=0, rhip=-6, rkn=0),
-    "hold": dict(torso=6, head=-6, lsh=92, lel=6, rsh=84, rel=14, lhip=6, lkn=0, rhip=-6, rkn=0),
+    "hold": dict(torso=6, head=-6, lsh=30, lel=20, rsh=24, rel=24, lhip=6, lkn=0, rhip=-6, rkn=0),
+    "mill": dict(torso=12, head=14, lsh=40, lel=20, rsh=30, rel=30, lhip=4, lkn=0, rhip=-4, rkn=0),
     "shove": dict(torso=24, head=-4, lsh=96, lel=14, rsh=88, rel=20, lhip=-14, lkn=6, rhip=22, rkn=0),
-    "look_up": dict(torso=-6, head=-34, lsh=92, lel=6, rsh=84, rel=14, lhip=6, lkn=0, rhip=-6, rkn=0),
+    "look_up": dict(torso=-6, head=-34, lsh=30, lel=20, rsh=24, rel=24, lhip=6, lkn=0, rhip=-6, rkn=0),
     "hide": dict(torso=46, head=-30, lsh=60, lel=60, rsh=48, rel=80, lhip=118, lkn=-130, rhip=84, rkn=-120),
     "phone_low": dict(torso=40, head=10, lsh=44, lel=80, rsh=36, rel=88, lhip=118, lkn=-130, rhip=84, rkn=-120),
     "throw_back": dict(torso=-8, head=-6, lsh=40, lel=60, rsh=-150, rel=-20, lhip=10, lkn=0, rhip=-14, rkn=6),
@@ -199,8 +202,8 @@ POSES_LT = {
     "climb_a": dict(torso=8, head=-20, lsh=162, lel=8, rsh=118, rel=40, lhip=70, lkn=-96, rhip=10, rkn=-10),
     "climb_b": dict(torso=8, head=-20, lsh=118, lel=40, rsh=162, rel=8, lhip=10, lkn=-10, rhip=70, rkn=-96),
     "haul": dict(torso=46, head=40, lsh=60, lel=40, rsh=84, rel=24, lhip=100, lkn=-110, rhip=90, rkn=-100),
-    "sit_hold": dict(torso=10, head=14, lsh=40, lel=84, rsh=34, rel=90, lhip=96, lkn=-118, rhip=88, rkn=-112),
-    "muzzle": dict(torso=18, head=24, lsh=46, lel=96, rsh=58, rel=70, lhip=96, lkn=-118, rhip=88, rkn=-112),
+    "sit_hold": dict(torso=8, head=14, lsh=40, lel=84, rsh=34, rel=90, lhip=128, lkn=-150, rhip=116, rkn=-140),
+    "muzzle": dict(torso=16, head=24, lsh=46, lel=96, rsh=58, rel=70, lhip=128, lkn=-150, rhip=116, rkn=-140),
     "rope": dict(torso=-4, head=-14, lsh=10, lel=6, rsh=168, rel=4, lhip=4, lkn=0, rhip=-4, rkn=0),
     "rope_pull": dict(torso=8, head=6, lsh=10, lel=6, rsh=122, rel=30, lhip=4, lkn=0, rhip=-4, rkn=0),
 }
@@ -241,12 +244,18 @@ def dog_head(c, x, y, s=1.0, facing=1, state="idle", light=1.0, a=1.0):
     if state == "down":
         c.rotate(58)
         state = "alert"
+    wide = state in ("scared", "scared_bark")
+    bark_open = state in ("bark", "scared_bark")
     for dx in (-6, 4):
         ear = skia.Path()
         if state == "alert":
             ear.moveTo(dx - 6, -10)
             ear.lineTo(dx, -32)
             ear.lineTo(dx + 6, -10)
+        elif wide:          # orecchie schiacciate all'indietro
+            ear.moveTo(dx - 2, -12)
+            ear.quadTo(dx - 20, -16, dx - 26, -4)
+            ear.lineTo(dx - 4, -4)
         else:
             ear.moveTo(dx - 7, -10)
             ear.quadTo(dx - 15, 0, dx - 10, 12)
@@ -260,8 +269,12 @@ def dog_head(c, x, y, s=1.0, facing=1, state="idle", light=1.0, a=1.0):
     c.drawRRect(snout, G.P(ink, a, StrokeWidth=3, Style=skia.Paint.kStroke_Style))
     c.drawRRect(snout, G.P(mix(col, (255, 240, 220), 0.25), a))
     c.drawCircle(27, 1, 3.8, G.P(ink, a))
-    c.drawCircle(7, -5, 2.8, G.P(ink, a))
-    if state == "bark":
+    if wide:
+        c.drawCircle(7, -5, 5.2, G.P((250, 248, 240), a))
+        c.drawCircle(8, -5, 2.8, G.P(ink, a))
+    else:
+        c.drawCircle(7, -5, 2.8, G.P(ink, a))
+    if bark_open:
         c.drawLine(10, 11, 26, 20, G.P(ink, a, StrokeWidth=3))
     c.restore()
 
@@ -343,8 +356,8 @@ def car(c, x, yb, s=1.0, col=(150, 60, 56), light=1.0, blink=0.0, facing=1):
 def sky(c, h, t=0.0, x0=-1800, x1=2900, y0=-1200, y1=1400):
     top, midc, hor, sea, deep, L = pal(h)
     G.vgrad(c, x0, y0, x1, y1, [top, midc, hor], top, stops=[0, 0.62, 1])
-    if L > 0.75:            # sole basso sopra l'isola
-        k = (L - 0.75) / 0.25
+    if L > 0.75 and h > 16:  # sole basso sopra l'isola
+        k = (L - 0.75) / 0.25 * min(1.0, h - 16)
         G.glow(c, 880, 880, 560, (255, 196, 120), 0.5 * k)
         c.drawCircle(880, 930, 60, G.P((255, 226, 160), 0.92 * k))
     if L < 0.6:             # stelle e luna
@@ -367,7 +380,7 @@ def back_water(c, d, h, t, x0=-1800, x1=2900):
     y = water_y(d)
     G.vgrad(c, x0, y, x1, y + 700, mix(sea, hor, 0.18), deep)
     G.rect(c, x0, y + 699, x1, 3400, deep)
-    if L > 0.75:            # riflesso del sole
+    if L > 0.75 and h > 16:  # riflesso del sole
         for k in range(10):
             yy = y + 8 + k * 18
             w = 160 - k * 10 + 20 * math.sin(t * 2 + k)
@@ -385,9 +398,13 @@ def front_water(c, d, h, t, x0=-1800, x1=2900, current=0.0):
     top, midc, hor, sea, deep, L = pal(h)
     y = water_y(d)
     mid = mix(sea, deep, 0.55)
-    sh = skia.GradientShader.MakeLinear([(0, y), (0, y + 1.0 * PX)], [rgba(sea, 0.45), rgba(mid, 0.985)])
-    c.drawRect(skia.Rect(x0, y, x1, y + 1.0 * PX), skia.Paint(AntiAlias=True, Shader=sh))
-    G.rect(c, x0, y + 1.0 * PX - 1, x1, 3400, mid, 0.985)
+    sh = skia.GradientShader.MakeLinear([(0, y), (0, y + 0.45 * PX)], [rgba(sea, 0.78), rgba(mid, 0.995)])
+    c.drawRect(skia.Rect(x0, y, x1, y + 0.45 * PX), skia.Paint(AntiAlias=True, Shader=sh))
+    G.rect(c, x0, y + 0.45 * PX - 1, x1, 3400, mid, 0.995)
+    if L < 0.6:             # scia di luna sul pelo dell'acqua: le teste si stagliano contro
+        sh = skia.GradientShader.MakeLinear([(0, y - 3), (0, y + 16)], [rgba((150, 170, 220), 0.0),
+                                                                        rgba((150, 170, 220), 0.25), rgba((150, 170, 220), 0.0)])
+        c.drawRect(skia.Rect(x0, y - 3, x1, y + 16), skia.Paint(AntiAlias=True, Shader=sh))
     rng = np.random.default_rng(9)
     for k in range(26):    # pulviscolo sott'acqua: il blocco non è mai piatto
         px_ = rng.uniform(-200, 1300)
@@ -401,7 +418,7 @@ def front_water(c, d, h, t, x0=-1800, x1=2900, current=0.0):
     if current > 0 and d > 0:   # corrente sulle FLATS (da sinistra a destra: la marea che entra)
         for k in range(10):
             ph = (t * 0.55 + k / 10) % 1
-            cx = XF0 - 40 + ph * (XF1 - XF0 + 120)
+            cx = XF0 - 40 + ph * 900
             cy = y + 8 + (k % 3) * min(9, d * PX / 4)
             ar = skia.Path()
             ar.moveTo(cx - 14, cy - 5)
@@ -434,7 +451,7 @@ def land(c, h):
     c.drawPath(r, G.P(lit((138, 132, 124), L), StrokeWidth=12, Style=skia.Paint.kStroke_Style))
     for x in np.arange(X0 + 20, X1, 46):
         c.drawLine(x, gy(x) - 6, x, gy(x) + 6, G.P(lit((84, 80, 78), L), StrokeWidth=2))
-    for x in (X0 + 90, X0 + 200, XF1 + 70, XF1 + 170):
+    for x in (X0 + 90, X0 + 200, XF0 + 330, XF0 + 520, XF0 + 710, XF1 + 70, XF1 + 170):
         yb = gy(x)
         G.rect(c, x - 3, yb - 3.2 * PX, x + 3, yb, lit((226, 226, 220), L))
         G.rect(c, x - 3, yb - 3.2 * PX, x + 3, yb - 2.8 * PX, lit((210, 60, 50), L))
@@ -558,7 +575,7 @@ def gauge(c, h, a=1.0, hot=None):
         y = ey(ft)
         c.drawLine(x - 9, y, x + 9, y, G.P((24, 24, 28), a, StrokeWidth=2.6))
         c.drawLine(x - 9, ey(ft + 0.5), x, ey(ft + 0.5), G.P((24, 24, 28), a, StrokeWidth=1.4))
-        if (ft % 2 == 0 and ft) or ft == 5 or hot == ft:
+        if ft:
             col = (240, 60, 50) if hot == ft else lit((244, 242, 234), L)
             gfx.draw_text(c, str(ft), K.heavy(30 if hot != ft else 44), x + 16, y + (10 if hot != ft else 15),
                           color=col, alpha=a, align="left")
@@ -669,42 +686,71 @@ def tag(c, x, y, text_, col=(255, 200, 90), a=1.0, size=24):
 
 # ---------- i 14 attorno al box ----------
 
-# altezza (ft), x, davanti ai pali? Più alti = la testa riemerge prima. Tutti sulle FLATS o sul bordo.
+# altezza (ft), x, mano libera verso il palo. Tutti a portata di un palo o di una traversa del box.
 CROWD = [
-    (6.00, XB + 40, 1), (5.96, XB + 150, 1), (5.92, XB - 60, 0), (5.88, XB + 96, 0), (5.84, XB + 10, 1),
-    (5.80, XB + 200, 0), (5.76, XB - 20, 0), (5.72, XB + 124, 1), (5.68, XB + 240, 1), (5.64, XB + 64, 0),
-    (5.60, XB + 270, 0), (5.56, XB + 178, 1), (5.53, XB - 40, 1), (5.50, XB + 300, 0),
+    (5.88, 252, 1), (6.00, 274, 1), (5.64, 296, 0), (5.92, 318, 1), (5.56, 340, 0), (5.80, 360, 1),
+    (5.72, 382, 0), (5.96, 404, 1), (5.53, 426, 0), (5.84, 446, 1), (5.68, 468, 0), (5.76, 490, 1),
+    (5.60, 512, 0), (5.50, 534, 1),
 ]
 
 
-def crowd(c, h, t, d, mode="cling", n=14, light=1.0, slap=0.0, shove=0.0, a=1.0):
-    """I morti attorno al box. mode: cling (braccia su, schiaffi ai pali) | hold (mani sulle traverse
-    all'altezza delle spalle: sott'acqua non spunta niente) | look (come hold, testa in su).
-    shove 0..1 = spingono tutti insieme."""
-    for i, (hf, x, fr) in enumerate(CROWD[:n]):
-        base = pose({"look": "look_up", "hold": "hold"}.get(mode, "cling"))
-        if mode == "hold":
-            base["torso"] += 7 * min(1.0, max(0.0, d) / 2)
-        if mode == "cling":
-            w = math.sin(t * 7 + i * 1.7) * 16 * slap
+def _grip(x, y):
+    """Dove si aggrappa chi sta in x: il palo più vicino (davanti o dietro) all'altezza delle spalle."""
+    posts = STILTS + [STILTS[0] + 22, STILTS[1] + 22]
+    return min(posts, key=lambda p: abs(p - x)), y
+
+
+def crowd(c, h, t, d, mode="cling", n=14, light=1.0, slap=0.0, shove=0.0, a=1.0, settle=0.0):
+    """I morti attorno al box.
+    mill: arrivano e si guardano attorno (la campana ha smesso) | cling: braccia su, spingono (shove 0..1)
+    hold: un braccio stretto al palo, la corrente li schiaccia | look: come hold, testa in su.
+    settle 0..1: dopo il silenzio si fermano, le braccia scendono. Sott'acqua niente occhi (IN SIGHT 0 è vero)."""
+    night = light < 0.6
+    for i, (hf, x, side) in enumerate(CROWD[:n]):
+        if hf < d - 0.6:          # più di mezzo piede sotto: non si vede niente
+            continue
+        if mode == "mill":
+            base = pose("mill")
+            base["head"] += 26 * math.sin(t * 1.3 + i * 2.1)
+            base = blend(base, pose("cling"), 0.0)
+        elif mode == "cling":
+            base = pose("cling")
+            w = math.sin(t * 7 + i * 1.7) * 16 * slap * (1 - settle)
             base["lsh"] += w
             base["rsh"] -= w
-            base["torso"] += 7 * min(1.0, max(0.0, d) / 2)
             if shove:
                 base = blend(base, pose("shove"), shove * (0.6 + 0.4 * math.sin(t * 14 + i)))
-        facing = 1 if x < XB + 60 else -1
-        draw_dead(c, i, x, gy(x), breathe(base, t + i, 0.6), facing=facing, h_ft=hf, light=light, a=a,
-                  look=1.0 if mode == "look" else 0.0)
+            if settle:
+                base = blend(base, pose("hold"), settle)
+        else:
+            base = pose("look_up" if mode == "look" else "hold")
+            base["torso"] += 7 * min(1.0, max(0.0, d) / 2)
+        facing = 1 if x < XB + 20 else -1
+        fig = dead_fig(i, hf)
+        fig.shade = max(0.0, 0.85 * (1 - light))
+        J = fig.draw(c, x, gy(x), breathe(base, t + i, 0.6), facing=facing, alpha=a)
+        if mode in ("hold", "look"):     # il braccio teso fino al palo, la mano chiusa
+            sx, sy = J["sho"]
+            gx, gy_ = _grip(x, sy + 6)
+            w = 0.058 * fig.height
+            col = mix(fig.fill, (20, 22, 30), fig.shade * 0.6)
+            for wd, cc in ((w + 2 * 0.022 * fig.height, fig.ink), (w, col)):
+                c.drawLine(sx, sy, gx, gy_, G.P(cc, a, StrokeWidth=wd, StrokeCap=skia.Paint.kRound_Cap))
+            c.drawRoundRect(skia.Rect(gx - w * 0.9, gy_ - w * 0.8, gx + w * 0.9, gy_ + w * 0.8), w * 0.5, w * 0.5,
+                            G.P(col, a))
+        eye_y = hf - 0.35
+        if eye_y > d:
+            eyes(c, J, facing, a, up=1.0 if mode == "look" else 0.0)
+        if night and hf > d:              # luna sul bagnato: un filo chiaro sulla testa
+            hx, hy = J["head"]
+            r = J["r"]
+            c.drawArc(skia.Rect(hx - r, hy - r, hx + r, hy + r), 200, 140, False,
+                      G.P((200, 214, 255), 0.55 * a, StrokeWidth=3, Style=skia.Paint.kStroke_Style))
 
 
 def hands_ghost(c, d, a=0.22):
-    """Le mani grigie ancora strette ai pali e alle traverse sotto il pelo dell'acqua: l'indizio per chi
-    riguarda (le teste sono sparite, le mani no)."""
-    for i, (hf, x, fr) in enumerate(CROWD):
-        sx = STILTS[i % 2] + (-14 if i % 2 == 0 else 14) + (i // 2 % 3 - 1) * 30
-        y = ey(hf - 1.0 - 0.12 * (i % 3))
-        if y > water_y(d) + 10:
-            c.drawOval(skia.Rect(sx - 13, y - 9, sx + 13, y + 9), G.P((160, 180, 156), a))
+    """(vecchio indizio, non più usato: le mani ora sono disegnate sui pali)."""
+    return None
 
 
 # ---------- scena: il set ----------
@@ -725,17 +771,20 @@ def world(c, s, b, R):
     lamp = ramp(h, 18.35, 0.1) if _p(b, "lamp") is None else _p(b, "lamp")
     lx, ly = lighthouse(c, h, lamp=lamp)
     land(c, h)
-    tide_sign(c, X0 - 40, h)
-    for cx, col in ((-150, (60, 86, 140)), (-400, (150, 60, 56)), (-640, (90, 96, 104))):
-        car(c, cx, gy(cx) + 4, s=0.9, col=col, light=L)
-    stilts(c, h, front=False, lurch=st["lurch"])
-    box(c, h, t, cutaway=_p(b, "cutaway", False), lurch=st["lurch"], dust=st["dust"],
-        inner=lambda c_, g: INNER.get(act, _no)(c_, g, R, b, st))
-    stilts(c, h, front=True, lurch=st["lurch"])
-    gauge(c, h, hot=_p(b, "gauge_hot"))
-    rope_ladder(c, h, t, k_up=LADDER.get(act, lambda R, b: _p(b, "ladder", 0.0))(R, b))
-    inch_post(c, h)
+    if act in MAINLAND:     # parcheggio e cartello solo nelle scene all'ingresso (il box è mezzo miglio più in là)
+        tide_sign(c, X0 - 40, h)
+        for cx, col in ((-150, (60, 86, 140)), (-400, (150, 60, 56)), (-640, (90, 96, 104))):
+            car(c, cx, gy(cx) + 4, s=0.9, col=col, light=L)
+    if not (_p(b, "bare") or _p(b, "no_box") or act in MAINLAND):
+        stilts(c, h, front=False, lurch=st["lurch"])
+        box(c, h, t, cutaway=_p(b, "cutaway", False), lurch=st["lurch"], dust=st["dust"],
+            inner=lambda c_, g: INNER.get(act, _no)(c_, g, R, b, st))
+        stilts(c, h, front=True, lurch=st["lurch"])
+        rope_ladder(c, h, t, k_up=LADDER.get(act, lambda R, b: _p(b, "ladder", 0.0))(R, b))
+        inch_post(c, h)
     ACTS.get(act, _no)(c, s, b, R, st)
+    if not (_p(b, "bare") or _p(b, "no_box") or act in MAINLAND):
+        gauge(c, h, hot=_p(b, "gauge_hot"))
     front_water(c, d, h, t, current=_p(b, "current", 1.0 if 0 < d < 3 else 0.0))
     if lamp > 0:
         lh_beam(c, lx, ly, t, lamp=lamp)
@@ -751,58 +800,86 @@ def _no(*a, **k):
 
 # ---------- coreografie del set ----------
 
-HOOK_DEAD = ((-330, 5.9), (-262, 5.6), (-200, 6.0), (-136, 5.7), (-72, 5.8), (-20, 5.65))
+HOOK_DEAD = ((-230, 5.9), (-172, 5.6), (-114, 6.0), (-56, 5.7), (4, 5.8))
+MAINLAND = ("arrive", "hide", "throw")
+HOOK_HIT = 90.0       # x di quello che entra in acqua
 
 
 def d_hook(R, b, h, d):
-    """Prima tutta sott'acqua; su "OUT" il mare si ritira in 1.4 s e la strada emerge."""
+    """Prima la strada è sott'acqua; su "out" il mare si ritira in fretta (più di 300 px) e la strada emerge."""
     out = _t(R, b, "drain_at", 3.2)
-    return 6.6 - 9.8 * gfx.ease_in_out((R.bs - out) / 1.4)
+    return 6.6 - 9.8 * gfx.ease_in_out((R.bs - out) / 1.0)
 
 
 def act_hook(c, s, b, R, st):
-    """Golden hour: i morti sul bagnasciuga. Uno è già in acqua fino alle ginocchia: l'onda lo butta giù su
-    "SWIM" e la corrente se lo porta via (l'acqua non li uccide: li trascina)."""
+    """Pomeriggio: i morti sulla riva. Uno è in acqua fino alla vita: l'onda lo ribalta su "swim" e la
+    corrente se lo porta via rotolando (l'acqua non li uccide: li trascina). Su "out" il primo scende sulla
+    strada appena uscita dal mare."""
     t = R.bs
     d = st["d"]
     out = _t(R, b, "drain_at", 3.2)
     for i, (x, hf) in enumerate(HOOK_DEAD):
-        look = pose("shamble") if t < out + 0.4 else blend(pose("shamble"), walk(R.t * 0.6, 0.5), 0.3)
-        draw_dead(c, i + 3, x, gy(x), breathe(look, R.t + i), facing=1, h_ft=hf)
+        g = t - out - 0.5 - i * 0.15
+        xx = x + (120 * ease(g / 1.6) if g > 0 else 0)
+        p = breathe(pose("shamble"), R.t + i) if g <= 0 else blend(walk(R.t * 0.9 + i, 0.7), pose("shamble"), 0.5)
+        draw_dead(c, i + 3, xx, gy(xx), p, facing=1, h_ft=hf)
     hit = _t(R, b, "hit_at", 0.7)
-    wx = 70.0
     if t < hit:
-        yb = water_y(d) + 2.2 * PX
-        draw_dead(c, 9, wx, yb, breathe(pose("shamble"), R.t), facing=1, h_ft=5.9)
+        draw_dead(c, 9, HOOK_HIT, gy(HOOK_HIT), breathe(pose("shamble"), R.t), facing=1, h_ft=5.9)
     else:
         g = t - hit
-        yb = water_y(d) - 4 + 70 * ease((g - 1.3) / 1.2)
-        xx = wx + 420 * ease(g / 2.8)
+        y = water_y(d) - 10 + 90 * ease((g - 1.6) / 1.0)
+        xx = HOOK_HIT + 560 * ease(g / 3.0)
         c.save()
-        c.translate(xx, yb)
-        c.rotate(-84 - 40 * math.sin(g * 2.6))
+        c.translate(xx, y)
+        c.rotate(-90 - 160 * g)                 # rotola con la corrente
         J = dead_fig(9, 5.9).draw(c, 0, 0, pose("shamble"), facing=1, feet=False)
-        eyes(c, J, 1, a=max(0.0, 1 - g / 1.4))
+        eyes(c, J, 1, a=max(0.0, 1 - (g - 1.2) / 0.8) if g > 1.2 else 1.0)
         c.restore()
+        if g > 1.4:                              # va giù: bolle
+            for k in range(6):
+                ph = (g * 1.4 + k / 6) % 1
+                c.drawCircle(xx + 10 * math.sin(k * 3 + g * 4), water_y(d) + 40 - 50 * ph, 4 + 3 * (k % 2),
+                             G.P((230, 245, 255), 0.6 * (1 - ph), StrokeWidth=2, Style=skia.Paint.kStroke_Style))
+        for k in range(5):                       # frecce della corrente che lo portano via
+            ph = (R.t * 0.8 + k / 5) % 1
+            ax = HOOK_HIT + 60 + ph * 600
+            ay = water_y(d) + 14 + (k % 2) * 10
+            ar = skia.Path()
+            ar.moveTo(ax - 16, ay - 6)
+            ar.lineTo(ax, ay)
+            ar.lineTo(ax - 16, ay + 6)
+            c.drawPath(ar, G.P((230, 245, 255), 0.8 * math.sin(ph * math.pi) * (1 - ramp(t, out - 0.3, 0.3)),
+                               StrokeWidth=3, Style=skia.Paint.kStroke_Style, StrokeCap=skia.Paint.kRound_Cap))
 
 
 def over_hook(c, s, b, R, st):
-    """L'onda che si arriccia sul primo e lo ribalta su "SWIM"."""
+    """L'onda: un'onda lunga che arriva da destra con la cresta di schiuma e gli spruzzi, e si rompe su
+    quello in acqua proprio su "swim"."""
     t = R.bs
     hit = _t(R, b, "hit_at", 0.7)
-    g = t - (hit - 0.45)
-    if 0 <= g < 1.3:
+    g = t - (hit - 0.55)
+    if 0 <= g < 1.4:
         y = water_y(st["d"])
-        x = 250 - 160 * ease(g / 0.5)
-        hgt = 210 * math.sin(min(1.0, g / 0.55) * math.pi * 0.5) * (1 - ease((g - 0.5) / 0.8))
+        x = 900 - 760 * ease(g / 0.6)            # la cresta corre verso riva
+        hgt = 150 * math.sin(min(1.0, g / 0.6) * math.pi * 0.5) * (1 - ease((g - 0.6) / 0.8))
         p = skia.Path()
-        p.moveTo(x - 220, y + 6)
-        p.quadTo(x - 80, y - hgt * 0.4, x - 20, y - hgt)
-        p.quadTo(x + 30, y - hgt * 1.1, x + 10, y - hgt * 0.6)
-        p.quadTo(x + 120, y - 10, x + 260, y + 6)
+        p.moveTo(x - 260, y + 8)
+        p.cubicTo(x - 120, y + 4, x - 60, y - hgt * 0.9, x, y - hgt)
+        p.cubicTo(x + 50, y - hgt * 1.05, x + 70, y - hgt * 0.6, x + 40, y - hgt * 0.45)
+        p.cubicTo(x + 140, y - hgt * 0.5, x + 400, y - 8, x + 700, y + 8)
         p.close()
-        c.drawPath(p, G.P((70, 130, 160), 0.92))
-        c.drawPath(p, G.P((240, 250, 255), 0.9, StrokeWidth=8, Style=skia.Paint.kStroke_Style))
+        c.drawPath(p, G.P((60, 130, 160), 0.95))
+        foam = skia.Path()
+        foam.moveTo(x - 70, y - hgt * 0.8)
+        foam.cubicTo(x - 40, y - hgt * 1.0, x + 30, y - hgt * 1.1, x + 50, y - hgt * 0.55)
+        c.drawPath(foam, G.P((245, 250, 255), 0.95, StrokeWidth=16, Style=skia.Paint.kStroke_Style,
+                             StrokeCap=skia.Paint.kRound_Cap))
+        rng = np.random.default_rng(int(g * 30))
+        for k in range(14):                      # spruzzi
+            sx = x + rng.uniform(-60, 60)
+            sy = y - hgt - rng.uniform(0, 60) * (1 + g)
+            c.drawCircle(sx, sy, rng.uniform(3, 7), G.P((245, 250, 255), 0.8 * (1 - g / 1.4)))
 
 
 ROAD_DEAD = ((X0 + 10, 5.9), (X0 + 64, 5.6), (X0 - 40, 6.0), (X0 + 120, 5.7), (X0 + 176, 5.65))
@@ -823,9 +900,16 @@ def act_arrive(c, s, b, R, st):
     run_end = 0.55
     ex = -560 + 250 * ramp(t, 0.0, run_end)
     if t < run_end:
-        eli(c, ex, gy(ex), blend(walk(R.t * 2.2, 1.3), pose("sneak"), 0.3), facing=1, light=L)
+        J = eli(c, ex, gy(ex), blend(walk(R.t * 2.2, 1.3), pose("sneak"), 0.3), facing=1, light=L)
     else:
-        eli(c, ex, gy(ex), breathe(pose("hide"), R.t), facing=1, light=L, dog="alert" if t > slap else "idle")
+        J = eli(c, ex, gy(ex), breathe(pose("hide"), R.t), facing=1, light=L, dog="alert" if t > slap else "idle")
+    k = ramp(t, run_end, 0.25)
+    if k > 0:                 # chi sono: ELI e BISCUIT, come i cartellini della mappa
+        G.pin(c, J["head"][0], J["head"][1] - 20, "ELI", a=k, up=110, col=(240, 236, 220))
+        dx, dy = J["sho"][0] + ELI.height * 0.065, J["sho"][1] + 8
+        c.drawLine(dx + 8, dy - 4, dx + 120, dy - 120, G.P((255, 204, 120), k, StrokeWidth=3))
+        c.drawCircle(dx + 8, dy - 4, 6, G.P((255, 204, 120), k, StrokeWidth=3, Style=skia.Paint.kStroke_Style))
+        tag(c, dx + 190, dy - 120, "BISCUIT", col=(255, 204, 120), a=k, size=22)
 
 
 def act_hide(c, s, b, R, st):
@@ -854,13 +938,25 @@ def act_hide(c, s, b, R, st):
              a=ramp(t, 0.05, 0.2), anchor=(hx + 8, hy - 20))
 
 
+ALARM_X = -820.0      # l'auto bianca in fondo al parcheggio
+
+
 def act_throw(c, s, b, R, st):
-    """Si alza dietro l'auto e lancia il sasso lontano lungo la spiaggia (esce dall'inquadratura in alto)."""
+    """Si alza dietro l'auto e lancia il sasso in fondo al parcheggio: colpisce l'auto bianca, che lampeggia
+    e suona (nella stessa inquadratura)."""
     L = st["L"]
     t = R.bs
     for i, (x, hf) in enumerate(ROAD_DEAD):
         draw_dead(c, i, x, gy(x), breathe(pose("shamble"), R.t + i), facing=-1, h_ft=hf, light=L)
     car(c, -150, gy(-150) + 4, s=0.9, col=(60, 86, 140), light=L)
+    hit = _t(R, b, "throw_at", 0.5) + 0.75
+    blink = 0.0
+    if t >= hit:
+        blink = 1.0 if ((t - hit) * 3.0) % 1 < 0.5 else 0.2
+    car(c, ALARM_X, gy(ALARM_X) + 4, s=0.9, col=(214, 214, 210), light=L, blink=blink)
+    if t >= hit:
+        G.sound_rings(c, ALARM_X, gy(ALARM_X) - 70, t - hit, col=(255, 200, 120), n=3, r_max=360, a=0.7, period=0.9,
+                      width=8)
     ex = -310
     th = _t(R, b, "throw_at", 0.5)
     g = t - th
@@ -873,65 +969,144 @@ def act_throw(c, s, b, R, st):
     else:
         p = blend(pose("throw"), pose("hide"), ease((g - 0.6) / 0.5))
     J = eli(c, ex, gy(ex), p, facing=-1, light=L, dog="idle")
-    if 0.05 <= g < 1.2:
+    if 0.05 <= g < 0.8:     # l'arco del sasso fino all'auto bianca
+        sx0, sy0 = J["sho"][0] - 20, J["sho"][1] - 40
+        tx, ty = ALARM_X + 40, gy(ALARM_X) - 70
         for j in range(6):
-            k = max(0.0, (g - 0.05 - j * 0.03) / 0.8)
-            sx = J["sho"][0] - 900 * k
-            sy = J["sho"][1] - 80 - 700 * k + 500 * k * k
-            c.drawCircle(sx, sy, 13 - j * 1.6, G.P(lit((190, 186, 176), L), 1.0 - j * 0.16))
+            k = max(0.0, min(1.0, (g - 0.05 - j * 0.03) / 0.7))
+            sx = sx0 + (tx - sx0) * k
+            sy = sy0 + (ty - sy0) * k - 260 * math.sin(k * math.pi)
+            c.drawCircle(sx, sy, 13 - j * 1.6, G.P(lit((200, 196, 186), L), 1.0 - j * 0.16))
+
+
+def eli_x(h):
+    """Dove sta Eli nella vista di lato all'ora h (stessa legge della mappa: 6:05 ingresso, 6:19 bordo FLATS)."""
+    k = max(0.0, min(1.0, (h - ELI_START) / (ELI_EDGE - ELI_START)))
+    return X0 + 20 + (XF0 - 66 - X0 - 20) * k
+
+
+def timer(c, h, a=1.0):
+    """Il conto alla rovescia grande in alto a destra, in coordinate dello schermo: FLATS FLOOD IN m:ss.
+    Esce dal cartello (6:13) e lo comanda l'ora dell'HUD."""
+    if a <= 0:
+        return
+    left = max(0.0, (18 + 13 / 60 - h) * 3600)
+    col = (255, 80, 70) if left < 60 else (255, 204, 90)
+    screen(c)
+    x, y = 790, 300
+    r = skia.RRect.MakeRectXY(skia.Rect(x - 230, y - 70, x + 230, y + 112), 22, 22)
+    c.drawRRect(r, G.P((10, 10, 14), 0.86 * a))
+    c.drawRRect(r, G.P(col, 0.9 * a, StrokeWidth=3, Style=skia.Paint.kStroke_Style))
+    gfx.draw_text(c, "FLATS FLOOD IN", K.bold(26), x, y - 26, color=(220, 222, 230), alpha=a, tracking=3)
+    gfx.draw_text(c, f"{int(left // 60)}:{int(left % 60):02d}", gfx.mono(100, "SemiBold"), x, y + 84, color=col, alpha=a)
+    c.restore()
+
+
+def act_walk_road(c, s, b, R, st):
+    """Sulla strada vuota: Eli cammina in punta di piedi con Biscuit nella giacca, lentissimo."""
+    L = st["L"]
+    x = eli_x(st["h"])
+    eli(c, x, gy(x), blend(walk(R.t * 0.55, 0.45), pose("sneak"), 0.6), facing=1, light=L)
+
+
+def over_walk(c, s, b, R, st):
+    timer(c, st["h"], a=ramp(R.bs, 0.0, 0.25))
+
+
+def act_flood_ahead(c, s, b, R, st):
+    """Davanti a lui le FLATS vanno sott'acqua (box sul bordo, lontano); lui è ancora sulla strada."""
+    L = st["L"]
+    x = eli_x(st["h"])
+    eli(c, x, gy(x), blend(walk(R.t * 0.55, 0.45), pose("sneak"), 0.6), facing=1, light=L)
+
+
+def over_flood_ahead(c, s, b, R, st):
+    timer(c, st["h"])
+    k = ramp(R.bs, _t(R, b, "short_at", 99), 0.25)
+    if k > 0:
+        x = eli_x(st["h"])
+        y = gy(x) - 230
+        c.drawLine(x + 30, y + 16, XF0 - 10, y + 16, G.P((255, 90, 80), k, StrokeWidth=5,
+                                                        PathEffect=skia.DashPathEffect.Make([12, 8], 0)))
+        for xx in (x + 30, XF0 - 10):
+            c.drawLine(xx, y, xx, y + 32, G.P((255, 90, 80), k, StrokeWidth=5))
+        tag(c, (x + XF0) / 2 + 10, y - 22, "STILL OUT HERE", col=(255, 90, 80), a=k, size=24)
 
 
 def act_walk_side(c, s, b, R, st):
     """Sulla strada, a metà: la campana e la testa che scatta indietro verso la spiaggia (lui sa cosa fa un suono)."""
     L = st["L"]
     t = R.bs
-    x = X0 + 110
+    x = eli_x(st["h"])
     turn = _t(R, b, "turn_at", 0.3)
     k = ramp(t, turn, 0.18)
     p = blend(blend(walk(R.t * 0.7, 0.6), pose("sneak"), 0.5), pose("look_back"), k)
     eli(c, x, gy(x), p, facing=1 if k < 0.5 else -1, light=L, dog="alert" if k > 0.5 else "idle")
-    if t > turn - 0.3:
-        G.sound_rings(c, LH_X, gy(LH_X) - 360, R.t, col=(255, 230, 170), n=3, r_max=700, a=0.5, period=1.1)
+    if t > turn - 0.3:     # i rintocchi arrivano dall'isola (a destra) e corrono verso la spiaggia
+        for j in range(3):
+            ph = ((t - turn + 0.3) * 0.9 + j / 3) % 1
+            r = 120 + ph * 900
+            c.drawArc(skia.Rect(x + 700 - r, gy(x) - 300 - r, x + 700 + r, gy(x) - 300 + r), 150, 60, False,
+                      G.P((255, 230, 170), 0.6 * (1 - ph), StrokeWidth=8, Style=skia.Paint.kStroke_Style))
 
 
 def act_edge(c, s, b, R, st):
     """Al bordo delle FLATS, sull'asciutto: davanti un quarto di miglio d'acqua che sale. Un Eli "fantasma"
-    prova a guadare: i pollici salgono mentre attraversa e a metà passano la linea rossa, e cade."""
+    (contorno tratteggiato) prova a guadare: i pollici salgono mentre attraversa e a poco più di metà passano
+    la linea rossa; la corrente lo butta giù e lo porta via, come lo zombie dell'inizio."""
     L = st["L"]
     t = R.bs
     ex = XF0 - 46
     eli(c, ex, gy(ex), breathe(pose("stand_tense"), R.t), facing=1, light=L)
     gs = _t(R, b, "ghost_at", 1.6)
     if t >= gs:
-        g = (t - gs) / 2.2
-        frac = min(1.0, g)
+        g = (t - gs) / 2.0
         fall = next((f / 100 for f in range(101) if depth(st["h"] + f / 100 * 7.5 / 60) * 12 >= 6), 2.0)
-        fell = frac >= fall
-        frac = min(frac, fall)
-        gx = XF0 + 20 + (XF1 - XF0 - 40) * frac
-        gd = 0.5 if fell else depth(st["h"] + frac * 7.5 / 60)    # un quarto di miglio a 2 mph
-        a = 0.62 * (1 - ramp(t, gs + 2.6, 0.4))
-        if not fell:
-            eli(c, gx, Y0, blend(walk(R.t * 1.2, 0.8), pose("sneak"), 0.4), facing=1, light=L, a=a, dog=None)
-        else:
+        frac = min(g, fall)
+        fell = g >= fall
+        gx = XF0 + 20 + WADE * frac
+        gd = 0.5 if fell else depth(st["h"] + frac * 7.5 / 60)     # un quarto di miglio a 2 mph
+        a = 0.85 * (1 - ramp(t, gs + 2.0 * fall + 1.4, 0.4))
+        if a > 0:
             c.save()
-            c.translate(gx, Y0 - 20)
-            c.rotate(-70)
-            ELI.draw(c, 0, 0, pose("stand"), facing=1, alpha=a, feet=False)
+            if fell:          # buttato giù: ruota e scivola con la corrente
+                fg = (g - fall) * 2.0
+                c.translate(gx + 160 * ease(fg / 1.4), Y0 - 10)
+                c.rotate(-80 - 50 * min(1.0, fg))
+                pts = ELI.draw(c, 0, 0, pose("stand"), facing=1, alpha=0.0, feet=False)
+            else:
+                pts = ELI.draw(c, gx, Y0, blend(walk(R.t * 1.2, 0.8), pose("sneak"), 0.4), facing=1, alpha=0.0)
+            ghost_outline(c, pts, ELI.height, a)
             c.restore()
         st["ghost"] = (gx, gd, fell, a)
+
+
+def ghost_outline(c, J, Hh, a):
+    """Il contorno tratteggiato di uno stickman (lo "e se"): arti e testa a puntini color crema."""
+    dash = skia.DashPathEffect.Make([10, 8], 0)
+    paint = G.P((240, 232, 214), a, StrokeWidth=Hh * 0.05, Style=skia.Paint.kStroke_Style,
+                StrokeCap=skia.Paint.kRound_Cap, PathEffect=dash)
+    for chain in (("sho", "lelb", "lhand"), ("sho", "relb", "rhand"), ("hip", "lknee", "lfoot"),
+                  ("hip", "rknee", "rfoot"), ("hip", "neck")):
+        p = skia.Path()
+        p.moveTo(*J[chain[0]])
+        for k in chain[1:]:
+            p.lineTo(*J[k])
+        c.drawPath(p, paint)
+    hx, hy = J["head"]
+    c.drawCircle(hx, hy, J["r"], paint)
 
 
 def over_edge(c, s, b, R, st):
     d = st["d"]
     inch = max(0.0, d * 12)
     col = (255, 90, 80) if inch >= 6 else (120, 200, 255)
-    chip(c, POST_X + 60, gy(POST_X) - 120, "WATER", f"{inch:.0f} IN", col=col, size=32, anchor=(POST_X, water_y(d)))
+    chip(c, POST_X + 40, gy(POST_X) - 150, "WATER HERE", f"{inch:.0f} IN", col=col, size=30, anchor=(POST_X, water_y(d)))
     g = st.get("ghost")
     if g:
         gx, gd, fell, a = g
-        chip(c, gx + 30, Y0 + 70, "IF HE WADES", f"{gd * 12:.0f} IN", col=(255, 90, 80) if fell else (255, 200, 90),
-             a=min(1.0, a * 2.2), size=30)
+        chip(c, gx + 20, Y0 - 260, "IF HE WADES", f"{gd * 12:.0f} IN", col=(255, 90, 80) if fell else (255, 204, 90),
+             a=min(1.0, a * 1.4), size=34, anchor=(gx, Y0 - 190))
 
 
 def act_run(c, s, b, R, st):
@@ -945,14 +1120,15 @@ def act_run(c, s, b, R, st):
     eli(c, x, gy(x), p, facing=-1 if k < 1 else 1, light=L)
     head = _t(R, b, "head_at", 99)
     if t > head:
-        xx = X0 - 60 + 80 * ramp(t, head, 1.2)
+        xx = X0 + 20 + 90 * ramp(t, head, 1.2)
         draw_dead(c, 0, xx, gy(xx), blend(walk(R.t * 2.2, 1.4), pose("shamble"), 0.3), facing=1, h_ft=5.9, light=L)
 
 
 def over_run(c, s, b, R, st):
-    k = ramp(R.bs, _t(R, b, "chip_at", 1.4), 0.25)
-    x0, y0, x1, fy = box_geo()
-    tag(c, XB + 50, y0 - 100, "REAL: SOME TIDAL ROADS HAVE THESE", col=(255, 200, 90), a=k, size=19)
+    k = ramp(R.bs, _t(R, b, "chip_at", 1.0), 0.25)
+    screen(c)
+    tag(c, 560, 560, "REAL: SOME TIDAL ROADS HAVE THESE", col=(255, 204, 90), a=k, size=24)
+    c.restore()
 
 
 def ladder_haul(R, b):
@@ -961,7 +1137,8 @@ def ladder_haul(R, b):
 
 
 def act_climb(c, s, b, R, st):
-    """Sale con Biscuit nella giacca, entra, tira su la scala; i morti arrivano di corsa da sinistra."""
+    """Sale con Biscuit nella giacca, entra, tira su la scala di corda; i morti arrivano di corsa e si fermano
+    sotto, a guardarsi attorno: la campana ha smesso e non sanno dov'è."""
     L = st["L"]
     t = R.bs
     x0, y0, x1, fy = box_geo()
@@ -973,21 +1150,30 @@ def act_climb(c, s, b, R, st):
         eli(c, LADDER_X - 4, yfeet, p, facing=1, light=L)
     elif t < climb_end + 1.6:   # dalla porta: si vede che tira su
         k = ladder_haul(R, b)
-        eli(c, x0 + 30, fy, blend(pose("haul"), pose("sit_hold"), k), facing=-1, light=L, a=1.0)
+        eli(c, x0 + 30, fy, blend(pose("haul"), pose("sit_hold"), k), facing=-1, light=L)
     arrive = _t(R, b, "arrive_at", 1.8)
-    for i, (hf, x, fr) in enumerate(CROWD[:9]):
+    for i, (hf, x, side) in enumerate(CROWD[:10]):
         g = t - arrive - i * 0.12
-        start = X0 - 160 - i * 50
+        start = X0 - 120 - i * 40
         xx = start + (x - start) * ease(g / 1.0) if g > 0 else start
-        p = blend(walk(R.t * 2.0 + i * 0.3, 1.4), pose("cling"), ease((g - 0.8) / 0.4))
         if g > -0.6:
-            draw_dead(c, i, xx, gy(xx), p, facing=1 if xx < XB + 60 else -1, h_ft=hf, light=L)
+            p = blend(walk(R.t * 2.0 + i * 0.3, 1.4), pose("mill"), ease((g - 0.8) / 0.4))
+            p["head"] += 24 * math.sin(R.t * 1.3 + i * 2.1) * ease((g - 0.9) / 0.4)
+            draw_dead(c, i, xx, gy(xx), p, facing=1 if xx < XB + 20 else -1, h_ft=hf, light=L)
+
+
+def over_climb(c, s, b, R, st):
+    k = ramp(R.bs, _t(R, b, "noclimb_at", 99), 0.25)
+    x0, y0, x1, fy = box_geo()
+    tag(c, XB + 150, fy + 90, "THEY DON'T CLIMB", col=(255, 120, 100), a=k, size=22)
 
 
 def pre_shake(R, b, st):
-    """La scala che sbatte: tutti spingono insieme, il box barcolla, cade polvere dalle assi."""
+    """La scala che sbatte: tutte le teste in su, spingono insieme, il box barcolla, cade polvere dalle assi.
+    Dopo il silenzio si calmano: le braccia scendono, ma restano lì."""
     t = R.bs
-    sh = _t(R, b, "shove_at", 0.6)
+    up = _t(R, b, "heads_at", 0.5)
+    sh = _t(R, b, "shove_at", 1.0)
     calm = _t(R, b, "calm_at", 3.0)
     g = t - sh
     amp = 1.0 if t < calm else max(0.0, 1 - (t - calm) / 0.8)
@@ -995,6 +1181,8 @@ def pre_shake(R, b, st):
         st["lurch"] = 9 * math.sin(g * 16) * amp
         st["dust"] = min(1.0, g / 0.3) * amp
     st["shove"] = amp * ramp(t, sh, 0.15)
+    st["heads"] = ramp(t, up, 0.12)
+    st["settle"] = ramp(t, calm, 0.8)
 
 
 def coil(c, x, y, L):
@@ -1003,47 +1191,55 @@ def coil(c, x, y, L):
 
 
 def inner_shake(c, g, R, b, st):
-    """Dentro: Eli stringe Biscuit; quando abbaia la zip sale sul muso."""
+    """Dentro: Eli stringe Biscuit mentre il box trema."""
     L = max(st["L"], 0.6)
     x0, y0, x1, fy = g
-    t = R.bs
-    zp = _t(R, b, "zip_at", 99)
-    k = ramp(t, zp, 0.35)
-    barking = t < zp and st.get("shove", 0) > 0.2 and (R.t * 5) % 1 < 0.5
-    eli(c, XB - 6, fy, breathe(blend(pose("sit_hold"), pose("muzzle"), k), R.t, 0.4), facing=1, light=L,
-        dog="bark" if barking else "alert", zip_k=k)
+    eli(c, XB - 6, fy, breathe(pose("sit_hold"), R.t, 0.4), facing=1, light=L, dog="alert")
     coil(c, x0 + 50, fy - 8, L)
 
 
 def act_shake(c, s, b, R, st):
-    crowd(c, st["h"], R.t, st["d"], mode="cling", light=st["L"], slap=0.4, shove=st.get("shove", 0.0))
+    """Prima si guardano attorno (mill); sul rumore della scala teste in su e spinte (cling + shove)."""
+    if st.get("heads", 0) < 0.5:
+        crowd(c, st["h"], R.t, st["d"], mode="mill", light=st["L"])
+    else:
+        crowd(c, st["h"], R.t, st["d"], mode="cling", light=st["L"], slap=0.4, shove=st.get("shove", 0.0),
+              settle=st.get("settle", 0.0))
 
 
 def act_rise(c, s, b, R, st):
-    """L'acqua sale sul palo: le teste vanno sotto (il pelo dell'acqua le copre davvero)."""
+    """L'acqua sale sul palo: le teste vanno sotto (il pelo dell'acqua le copre davvero), le mani restano."""
     crowd(c, st["h"], R.t, st["d"], mode="hold", light=st["L"])
+
+
+def insight_chip(c, n, col, a=1.0):
+    """IN SIGHT sempre nello stesso punto dello schermo, in alto a destra, a ogni stacco."""
+    screen(c)
+    chip(c, 800, 330, "IN SIGHT", str(n), col=col, size=52, a=a)
+    c.restore()
 
 
 def over_rise(c, s, b, R, st):
     d = st["d"]
-    hands_ghost(c, d, a=0.2)
-    n = sum(1 for hf, x, fr in CROWD if hf - d > 0.02)
-    x0, y0, x1, fy = box_geo()
+    n = sum(1 for hf, x, side in CROWD if hf - d > 0.02)
     if _p(b, "insight", True):
-        col = (120, 200, 255) if n else (220, 222, 230)
-        chip(c, XB + 250, y0 + 60, "IN SIGHT", str(n), col=col, size=44)
+        insight_chip(c, n, (120, 200, 255) if n else (220, 222, 230))
+    # quanto è alta l'acqua: la pastiglia viaggia sul pelo dell'acqua accanto alla scala dipinta
+    if _p(b, "water_chip", True):
+        chip(c, STILTS[1] + 105, water_y(d) - 46, "WATER", f"{d:.1f} FT" if d >= 1 else f"{d * 12:.0f} IN",
+             col=(150, 210, 255), size=28, anchor=(STILTS[1] + 10, water_y(d)))
     tick = _t(R, b, "tick_at")
     if tick is not None and R.bs >= tick:   # quanto sono alti: tratteggio dalla testa più alta alla scala
         k = ramp(R.bs, tick, 0.3) * (1 - ramp(R.bs, tick + 2.4, 0.3))
-        y = ey(CROWD[0][0])
-        c.drawLine(CROWD[0][1] - 30, y, STILTS[1] + 60, y,
-                   G.P((255, 200, 90), 0.9 * k, StrokeWidth=3, PathEffect=skia.DashPathEffect.Make([10, 8], 0)))
-        tag(c, STILTS[1] + 130, y - 26, "THEIR HEADS · 6 FT", col=(255, 200, 90), a=k, size=18)
+        y = ey(6.0)
+        c.drawLine(CROWD[1][1] - 40, y, STILTS[1] + 70, y,
+                   G.P((255, 204, 90), 0.95 * k, StrokeWidth=4, PathEffect=skia.DashPathEffect.Make([10, 8], 0)))
+        tag(c, CROWD[1][1] - 20, y - 50, "THEIR HEADS · 6 FT", col=(255, 204, 90), a=k, size=22)
     egg = _t(R, b, "egg_at")
     if egg is not None and 0 <= R.bs - egg < 5 / 60:    # due occhi rossi sotto il pelo dell'acqua, 5 fotogrammi
         y = water_y(d) + 30
         for dx in (-8, 8):
-            c.drawCircle(XB + 210 + dx, y, 4, G.P((255, 50, 40), 0.6))
+            c.drawCircle(XB + 120 + dx, y, 4, G.P((255, 50, 40), 0.6))
 
 
 def inner_high(c, g, R, b, st):
@@ -1066,10 +1262,18 @@ def inner_freeze(c, g, R, b, st):
         dog=("down" if t >= fr + 0.5 else "alert") if t >= fr else "idle", zip_k=0.0)
     if t >= fr + 0.5:     # lo sguardo: una linea tratteggiata giù tra le assi
         J = ELI.joints(*ELI.hip_for_feet(XB - 6, fy, pose("sit_hold")), pose("sit_hold"), 1)
-        sx, sy = J["sho"][0] + 12, J["sho"][1] + 30
+        sx, sy = J["sho"][0] + 14, J["sho"][1] + 30
         k2 = ramp(t, fr + 0.5, 0.4)
-        c.drawLine(sx, sy, sx + 30, fy + 60, G.P((255, 200, 90), 0.7 * k2, StrokeWidth=3,
+        c.drawLine(sx, sy, sx + 30, fy + 70, G.P((255, 204, 90), 0.8 * k2, StrokeWidth=4,
                                                  PathEffect=skia.DashPathEffect.Make([8, 7], 0)))
+    coil(c, x0 + 50, fy - 8, L)
+
+
+def inner_hatch(c, g, R, b, st):
+    """In ginocchio sulla botola, a guardare giù: la vista che segue è la sua."""
+    L = max(st["L"], 0.6)
+    x0, y0, x1, fy = g
+    eli(c, XB + 20, fy, breathe(pose("kneel_reach"), R.t, 0.2), facing=1, light=L, dog="down")
     coil(c, x0 + 50, fy - 8, L)
 
 
@@ -1081,18 +1285,16 @@ def act_ledger(c, s, b, R, st):
     crowd(c, st["h"], R.t, st["d"], mode="hold", light=st["L"])
 
 
-def over_gauge_down(c, s, b, R, st):
-    hands_ghost(c, st["d"], a=0.28)
-
-
 ACTS = {"hook": act_hook, "arrive": act_arrive, "hide": act_hide, "throw": act_throw, "walk_side": act_walk_side,
+        "walk_road": act_walk_road, "flood_ahead": act_flood_ahead,
         "edge": act_edge, "run": act_run, "climb": act_climb, "shake": act_shake, "rise": act_rise,
         "high": act_ledger, "freeze": act_rise, "gauge_down": act_gauge_down}
 ACTS_D = {"hook": d_hook}
 PRE = {"shake": pre_shake}
-OVER = {"hook": over_hook, "edge": over_edge, "run": over_run, "rise": over_rise, "high": over_rise,
-        "gauge_down": over_gauge_down}
-INNER = {"shake": inner_shake, "high": inner_high, "freeze": inner_freeze, "rise": inner_high}
+OVER = {"hook": over_hook, "edge": over_edge, "run": over_run, "climb": over_climb, "rise": over_rise,
+        "walk_road": over_walk, "flood_ahead": over_flood_ahead}
+INNER = {"shake": inner_shake, "high": inner_high, "freeze": inner_freeze, "rise": inner_high,
+         "gauge_down": inner_hatch}
 _UP = lambda R, b: 1.0
 LADDER = {"climb": ladder_haul, "shake": _UP, "rise": _UP, "high": _UP, "freeze": _UP, "gauge_down": _UP}
 
@@ -1225,11 +1427,7 @@ def bay(c, s, b, R):
     G.rect(c, bxv[0] + 28, bxv[1] - 14, bxv[0] + 56, bxv[1] + 14, lit((132, 106, 80), L))
     c.drawLine(bxv[0] + 28, bxv[1], bxv[0] + 56, bxv[1], G.P(lit((80, 64, 50), L), StrokeWidth=3))
     if _p(b, "flats_label"):
-        (fx0, fy0), (fx1, fy1) = road_xy(F0), road_xy(F1)
-        c.drawLine(fx0 + 70, fy0, fx1 + 70, fy1, G.P((150, 210, 255), 0.9, StrokeWidth=4))
-        for yy, xx in ((fy0, fx0), (fy1, fx1)):
-            c.drawLine(xx + 58, yy, xx + 82, yy, G.P((150, 210, 255), 0.9, StrokeWidth=4))
-        tag(c, (fx0 + fx1) / 2 + 210, (fy0 + fy1) / 2 + 8, "THE FLATS · ¼ MILE", col=(150, 210, 255), size=20)
+        flats_bracket(c)
     # terraferma
     land_ = skia.Path()
     land_.moveTo(-400, 1590)
@@ -1331,6 +1529,16 @@ def map_run(c, s, b, R, h, d):
     eli_dot(c, 470, 1690)
 
 
+def flats_bracket(c, a=1.0):
+    """Le FLATS segnate sulla mappa: parentesi azzurra e cartellino (definite prima del conto alla rovescia)."""
+    (fx0, fy0), (fx1, fy1) = road_xy(F0), road_xy(F1)
+    col = (150, 210, 255)
+    c.drawLine(fx0 + 70, fy0, fx1 + 70, fy1, G.P(col, 0.9 * a, StrokeWidth=4))
+    for yy, xx in ((fy0, fx0), (fy1, fx1)):
+        c.drawLine(xx + 58, yy, xx + 82, yy, G.P(col, 0.9 * a, StrokeWidth=4))
+    tag(c, (fx0 + fx1) / 2 + 210, (fy0 + fy1) / 2 + 8, "THE FLATS · ¼ MILE", col=col, size=20, a=a)
+
+
 def map_walk(c, s, b, R, h, d):
     """Eli sulla strada in silenzio; il conto alla rovescia attaccato alle FLATS; i morti fermi all'auto."""
     t = R.bs
@@ -1341,10 +1549,9 @@ def map_walk(c, s, b, R, h, d):
     x, y = road_xy(v)
     eli_dot(c, x, y)
     fx, fy = road_xy(F0)
-    left = max(0.0, round((18 + 13 / 60 - h) * 3600))
-    col = (255, 90, 80) if left <= 0 else (255, 200, 90)
-    chip(c, fx - 210, fy - 90, "FLATS FLOOD IN", f"{int(left // 60)}:{int(left % 60):02d}", col=col, size=36,
-         anchor=(fx - 20, fy))
+    left = max(0.0, (18 + 13 / 60 - h) * 3600)
+    flats_bracket(c)
+    timer(c, h)
     if left <= 0 and _p(b, "short") is not None:
         k = ramp(t, _t(R, b, "short"), 0.3)
         c.drawLine(x - 50, y, fx - 50, fy, G.P((255, 90, 80), k, StrokeWidth=5,
@@ -1376,11 +1583,23 @@ def map_rings(c, s, b, R, h, d):
     G.pin(c, *LHM, "GRANDPA", up=120, col=(120, 170, 255))
 
 
+def when_near(R, spec, span=3):
+    """Tempo assoluto di "@parola" cercata nei beat vicini a quello corrente (anche dopo): un'azione che
+    attraversa più battute (la conta "Five." / "Ten." / "Fourteen...")."""
+    i = _beat_index(R)
+    word = spec[1:].split(":")[0].split("+")[0].split("-")[0].lower()
+    for j in sorted(range(max(0, i - span), min(len(R.tl.beats), i + span + 1)), key=lambda j: abs(j - i)):
+        e = R.tl.beats[j]
+        if any(word in w.text.lower() for w in e["words"]):
+            return e["t0"] + at_time(e, spec)
+    return None
+
+
 def map_count(c, s, b, R, h, d):
-    """DING... DING: a ogni colpo un gruppo dei più vicini all'acqua corre oltre la linea d'ingresso.
-    ON THE ROAD li conta mentre la passano; gli altri restano all'auto."""
-    t = R.bs
-    marks = [_t(R, b, k) for k in ("c1", "c2", "c3")]
+    """DING... DING: a ogni colpo un gruppo dei più vicini all'acqua corre oltre la linea d'ingresso e la passa
+    sul numero detto. ON THE ROAD li conta mentre la passano; gli altri restano all'auto."""
+    t = R.t
+    marks = [when_near(R, _p(b, k)) - 0.55 if _p(b, k) else None for k in ("c1", "c2", "c3")]
     groups = [range(0, 5), range(5, 10), range(10, 14)]
     on = 0
     for m, grp in zip(marks, groups):
@@ -1390,9 +1609,11 @@ def map_count(c, s, b, R, h, d):
                 dead_dot(c, sx, sy)
                 continue
             k = ease((t - m) / 0.8)
-            ex_, ey_ = road_xy(0.02 + 0.025 * (i % 5) + 0.06 * k)
-            dead_dot(c, sx + (ex_ - sx) * k + (i % 3 - 1) * 9, sy + (ey_ - sy) * k)
-            if k > 0.75:
+            ex_, ey_ = road_xy(0.035 + 0.022 * (i // 2) + 0.03 * k)
+            x = sx + (ex_ + (i % 2) * 22 - 11 - sx) * k
+            y = sy + (ey_ - sy) * k
+            dead_dot(c, x, y)
+            if y < road_xy(0.0)[1] - 30:
                 on += 1
     for i in range(14, len(DOTS)):
         dead_dot(c, *_alarm_pos(i, 1.0), dim=True)
@@ -1401,10 +1622,10 @@ def map_count(c, s, b, R, h, d):
                                                          PathEffect=skia.DashPathEffect.Make([12, 8], 0)))
     if marks[0] is not None and t >= marks[0] - 0.4:
         chip(c, ex0 - 190, ey0 - 140, "ON THE ROAD", str(on), col=(255, 90, 80), size=46, anchor=(ex0 - 80, ey0 - 30))
-    for m in marks:
-        if m is not None and 0 <= t - m < 1.4:
-            r = (t - m) * 1300
-            c.drawCircle(*LHM, r, G.P((255, 230, 160), 0.6 * (1 - (t - m) / 1.4), StrokeWidth=7,
+    for m in marks:      # il rintocco parte ~0.45 s prima del numero, il gruppo passa la linea sul numero
+        if m is not None and 0.1 <= t - m < 1.5:
+            r = (t - m - 0.1) * 1300
+            c.drawCircle(*LHM, r, G.P((255, 230, 160), 0.6 * (1 - (t - m - 0.1) / 1.4), StrokeWidth=7,
                                        Style=skia.Paint.kStroke_Style))
     v = eli_v(h)
     x, y = road_xy(v)
@@ -1466,11 +1687,11 @@ def gallery(c, s, b, R):
     c.drawPath(bell, G.P((60, 44, 20), StrokeWidth=5, Style=skia.Paint.kStroke_Style))
     c.drawCircle(0, 218, 18, G.P((70, 52, 24)))
     c.restore()
-    rope_x = bx + 30 + 120 * math.sin(math.radians(swing))
-    c.drawLine(bx + 20, by + 150, rope_x, 1100, G.P(lit((200, 180, 140), L), StrokeWidth=7))
-    G.rrect(c, bx - 160, 760, bx + 100, 880, 8, lit((190, 170, 120), L))
-    gfx.draw_text(c, "RING WHEN THE SEA", K.bold(22), bx - 30, 808, color=lit((50, 40, 24), L))
-    gfx.draw_text(c, "TOUCHES THE ROAD", K.bold(22), bx - 30, 842, color=lit((50, 40, 24), L))
+    G.rrect(c, 40, 720, 420, 940, 12, (52, 38, 26))                   # targa di legno scuro, scritte crema
+    c.drawRoundRect(skia.Rect(40, 720, 420, 940), 12, 12, G.P((120, 92, 60), StrokeWidth=6,
+                                                             Style=skia.Paint.kStroke_Style))
+    for k_, line in enumerate(("RING WHEN", "THE SEA TOUCHES", "THE ROAD")):
+        gfx.draw_text(c, line, K.heavy(40), 230, 792 + k_ * 56, color=(244, 232, 200))
     if ring_at is not None and t >= ring_at:
         G.sound_rings(c, bx, by + 80, R.t - ring_at, col=(255, 230, 170), n=3, r_max=760, a=0.7, period=1.0, width=10)
     grab = _t(R, b, "grab_at", 0.0)
@@ -1478,7 +1699,15 @@ def gallery(c, s, b, R):
         p = blend(pose("stand"), pose("rope"), ramp(t, grab, 0.4))
     else:
         p = blend(pose("rope"), pose("rope_pull"), 0.5 + 0.5 * math.sin((t - ring_at) * 7.5))
-    GRANDPA.draw(c, 600, 1222, breathe(p, R.t, 0.5), facing=-1)
+    J = GRANDPA.draw(c, 600, 1222, breathe(p, R.t, 0.5), facing=-1)
+    # la corda: dal batacchio alla mano del nonno (quando la tiene), altrimenti pende
+    top = (bx + 20 + 210 * math.sin(math.radians(swing)), by + 150)
+    if ring_at is not None and t >= grab:
+        hx, hy = J["rhand"]
+        c.drawLine(top[0], top[1], hx, hy, G.P(lit((214, 192, 150), L), StrokeWidth=8))
+        c.drawLine(hx, hy, hx + 6, hy + 160, G.P(lit((214, 192, 150), L), StrokeWidth=8))
+    else:
+        c.drawLine(top[0], top[1], top[0] + 10, 1100, G.P(lit((214, 192, 150), L), StrokeWidth=8))
     G.darkness(c, 0.25 * (1 - L), lights=[(870, 620, 700, 0.8)])
 
 
@@ -1504,11 +1733,20 @@ def binoc(c, s, b, R):
     road.close()
     c.drawPath(road, G.P(lit((140, 134, 126), L)))
     wet = ramp(R.bs, 0.1, 1.2)
-    G.rect(c, 300, 1220 - 100 * wet, 900, 1330 + 50 * wet, mix(sea, (150, 200, 230), 0.2), 0.8 * wet)
-    for k in range(5):
-        ph = (R.t * 0.6 + k / 5) % 1
-        c.drawLine(380 + ph * 420, 1250 + k * 14, 420 + ph * 420, 1250 + k * 14,
-                   G.P((220, 240, 255), 0.6 * wet, StrokeWidth=3))
+    top_y = 1420 - 230 * wet                  # il mare sale sulla strada fino a poco sotto i piedi di Eli
+    wv = skia.Path()
+    wv.moveTo(-300, 2300)
+    wv.lineTo(-300, top_y)
+    for x in range(-300, 1400, 20):
+        wv.lineTo(x, top_y + 8 * math.sin(x * 0.03 + R.t * 3))
+    wv.lineTo(1400, 2300)
+    wv.close()
+    c.drawPath(wv, G.P(mix(sea, (90, 150, 190), 0.4), 0.92))
+    for k in range(8):
+        ph = (R.t * 0.5 + k / 8) % 1
+        y = top_y + 30 + k * 26
+        c.drawLine(300 + ph * 500, y, 360 + ph * 500, y, G.P((220, 240, 255), 0.7 * wet, StrokeWidth=4,
+                                                            StrokeCap=skia.Paint.kRound_Cap))
     eli(c, 586, 1110, breathe(pose("sneak"), R.t), facing=1, light=L)
     screen(c)
     full = skia.Path()
@@ -1532,6 +1770,13 @@ def down(c, s, b, R):
     t = R.bs
     G.rect(c, -300, -300, 1380, 2300, (6, 10, 20))
     cx, cy = 540, 1040
+    sh = skia.GradientShader.MakeRadial((380, 820), 700, [rgba((60, 80, 130), 0.55), rgba((10, 16, 30), 0.0)])
+    c.drawRect(skia.Rect(-300, -300, 1380, 2300), skia.Paint(AntiAlias=True, Shader=sh))   # luna sull'acqua
+    for k in range(18):
+        ph = (R.t * 0.3 + k / 18) % 1
+        y = 500 + k * 70
+        c.drawLine(200 + 300 * math.sin(k * 2.3), y, 260 + 300 * math.sin(k * 2.3) + 40 * ph, y,
+                   G.P((180, 200, 240), 0.25 * math.sin(ph * math.pi), StrokeWidth=3, StrokeCap=skia.Paint.kRound_Cap))
     for k in range(10):
         ph = (R.t * 0.12 + k / 10) % 1
         c.drawOval(skia.Rect(cx - 120 - ph * 700, cy - 70 - ph * 400, cx + 120 + ph * 700, cy + 70 + ph * 400),
@@ -1539,11 +1784,13 @@ def down(c, s, b, R):
     feet = [(410, 920), (670, 920), (410, 1160), (670, 1160)]
     tops = [(170, 640), (910, 640), (170, 1440), (910, 1440)]
     sweeps = [_t(R, b, k) for k in ("s1", "s2", "s3")]
-    shown = [1, 6, 14]
     vis = 0
-    for m, n in zip(sweeps, shown):
-        if m is not None and t >= m:
-            vis = n
+    if sweeps[0] is not None and t >= sweeps[0]:
+        vis = 1
+    if sweeps[1] is not None and t >= sweeps[1]:
+        vis = min(6, 1 + int((t - sweeps[1]) / 0.06) + 1)
+    if sweeps[2] is not None and t >= sweeps[2]:
+        vis = min(14, 6 + int((t - sweeps[2]) / 0.05) + 1)     # 7, 8 ... 14: il contatore conta quelle disegnate
     beam_k = 0.0
     bands = []
     for m in sweeps:
@@ -1570,7 +1817,8 @@ def down(c, s, b, R):
     for rank, i in enumerate(order[:vis]):
         x, y = ring[i]
         m = sweeps[0 if rank < 1 else (1 if rank < 6 else 2)]
-        a = ease((t - m) / 0.25)
+        m += (rank - 1) * 0.06 if 1 <= rank < 6 else ((rank - 6) * 0.05 if rank >= 6 else 0.0)
+        a = ease((t - m) / 0.2)
         bob = 3 * math.sin(R.t * 1.3 + i)
         c.drawOval(skia.Rect(x - 70, y - 30 + bob, x + 70, y + 40 + bob), G.P((120, 150, 190), 0.12 * a,
                                                                               StrokeWidth=3, Style=skia.Paint.kStroke_Style))
@@ -1608,6 +1856,10 @@ def down(c, s, b, R):
         c.drawLine(-300, 40 + k * 46, 1380, 40 + k * 46, G.P((40, 30, 22), StrokeWidth=3))
         c.drawLine(-300, 1740 + k * 46, 1380, 1740 + k * 46, G.P((40, 30, 22), StrokeWidth=3))
     c.drawRect(skia.Rect(70, 330, 1010, 1700), G.P((30, 22, 16), StrokeWidth=14, Style=skia.Paint.kStroke_Style))
+    for hx in (300, 780):       # le mani di Eli sul bordo della botola: è lui che guarda giù
+        c.drawLine(hx, 1900, hx + (40 if hx < 540 else -40), 1716, G.P(JACKET, StrokeWidth=70, StrokeCap=skia.Paint.kRound_Cap))
+        c.drawRoundRect(skia.Rect(hx - 50 + (40 if hx < 540 else -40), 1680, hx + 50 + (40 if hx < 540 else -40), 1740),
+                        26, 26, G.P((233, 224, 205)))
     G.darkness(c, 0.3, lights=[(540, 1010, 900, 0.5)])
     if vis and _p(b, "insight", True):
         chip(c, 540, 490, "IN SIGHT", str(vis), col=(255, 80, 70), size=60)
@@ -1616,45 +1868,57 @@ def down(c, s, b, R):
 # ---------- scena: cartello finale ----------
 
 def end_map(c, s, b, R):
-    """La baia di notte: 14 puntini sotto il box, sulla strada che porta dritta al nonno. 6:38 AM."""
+    """6:38 AM: il mare tocca di nuovo la strada e il nonno suona. I 14 sotto il box si girano verso la campana
+    e fanno il primo passo sulla strada che si allaga intorno a loro: l'acqua non li ferma più."""
     t = R.bs
+    bell = _t(R, b, "l2_at", 1.0)
     G.rect(c, -300, -300, 1380, 2300, (6, 10, 20))
     c.save()
     c.translate(540, 300)
-    c.scale(0.68, 0.68)
+    c.scale(0.7, 0.7)
     c.translate(-540, -440)
     c.clipRect(skia.Rect(-200, 160, 1280, 1700))
-    bay(c, s, _Fake({"h": 23.95, "calm": True}), R)
-    G.rect(c, -300, -300, 1380, 2300, (4, 6, 14), 0.45)
+    bay(c, s, _Fake({"h": 24 + 6 + 38 / 60, "calm": True}), R)
+    G.rect(c, -300, -300, 1380, 2300, (4, 6, 14), 0.2)
     bx, by = road_xy(F0)
     G.rect(c, bx + 28, by - 14, bx + 56, by + 14, (132, 106, 80))
-    for i in range(14):
-        a = i / 14 * 2 * math.pi
-        dead_dot(c, bx + 42 + math.cos(a) * 50, by + math.sin(a) * 42)
-    c.drawCircle(*LHM, 22, G.P((236, 232, 224)))
-    c.drawCircle(*LHM, 9, G.P((255, 226, 150)))
+    tag(c, bx + 190, by + 20, "ELI · PHONE 0%", col=(240, 236, 220), size=20)
+    # la campana: anelli dal faro
+    if t >= bell:
+        for j in range(3):
+            r = (t - bell - j * 0.35) * 1300
+            if 0 < r < 1600:
+                c.drawCircle(*LHM, r, G.P((255, 230, 160), 0.7 * (1 - r / 1600), StrokeWidth=8,
+                                           Style=skia.Paint.kStroke_Style))
+    go = ramp(t, bell + 0.25, 1.4)
+    for i in range(14):            # due file sotto il box; sulla campana si girano e salgono la strada
+        v = F0 - 0.05 + 0.012 * (i // 2) + 0.12 * go
+        x, y = road_xy(v)
+        dead_dot(c, x + (i % 2) * 24 - 12, y)
     G.pin(c, *LHM, "GRANDPA", up=110, col=(120, 170, 255))
-    c.drawLine(bx + 40, by - 50, LHM[0] + 30, LHM[1] + 40, G.P((255, 90, 80), 0.8, StrokeWidth=4,
-                                                               PathEffect=skia.DashPathEffect.Make([12, 10], 0)))
+    if go > 0:
+        x, y = road_xy(F0 + 0.12 * go + 0.1)
+        chip(c, x - 200, y, "14", "→ GRANDPA", col=(255, 90, 80), size=34, a=ramp(t, bell + 0.4, 0.3))
     c.restore()
     k1 = ramp(t, _t(R, b, "l1_at", 0.2), 0.25)
-    k2 = ramp(t, _t(R, b, "l2_at", 1.0), 0.1)
-    gfx.draw_text(c, "6:38 AM · THE ROAD FLOODS AGAIN", K.bold(40), 540, 1130, color=(240, 240, 244), alpha=k1,
+    k2 = ramp(t, bell, 0.1)
+    gfx.draw_text(c, "6:38 AM · THE SEA TOUCHES THE ROAD", K.bold(38), 540, 1110, color=(240, 240, 244), alpha=k1,
                   tracking=2)
     if k2 > 0:
         f = K.heavy(92)
-        gfx.draw_text(c, "GRANDPA RINGS", f, 540, 1250, color=(235, 50, 44), alpha=k2)
-        gfx.draw_text(c, "THE BELL.", f, 540, 1345, color=(235, 50, 44), alpha=k2)
+        gfx.draw_text(c, "GRANDPA RINGS", f, 540, 1230, color=(235, 50, 44), alpha=k2)
+        gfx.draw_text(c, "THE BELL.", f, 540, 1325, color=(235, 50, 44), alpha=k2)
     k3 = ramp(t, _t(R, b, "l3_at", 1.6), 0.3)
     if k3 > 0:
-        label = "FOLLOW · DON'T MAKE A SOUND"
-        pf = K.bold(32)
+        label = "HOW DO YOU WARN HIM WITHOUT A SOUND?"
+        pf = gfx.fit_font(K.bold, label, 900, 34)
         pw = pf.measureText(label)
-        r = skia.RRect.MakeRectXY(skia.Rect(540 - pw / 2 - 40, 1420, 540 + pw / 2 + 40, 1496), 38, 38)
+        r = skia.RRect.MakeRectXY(skia.Rect(540 - pw / 2 - 34, 1384, 540 + pw / 2 + 34, 1460), 38, 38)
         c.drawRRect(r, G.P((20, 18, 18), 0.92 * k3))
         c.drawRRect(r, G.P((255, 110, 80), k3, StrokeWidth=3, Style=skia.Paint.kStroke_Style))
-        gfx.draw_text(c, label, pf, 540, 1470, color=(245, 240, 235), alpha=k3, tracking=2)
-        gfx.draw_text(c, "LOW TIDE · DAY 2", K.bold(26), 540, 1560, color=(170, 172, 180), alpha=k3, tracking=4)
+        gfx.draw_text(c, label, pf, 540, 1434, color=(245, 240, 235), alpha=k3)
+        gfx.draw_text(c, "LOW TIDE · DAY 2 · FOLLOW", K.bold(28), 540, 1520, color=(236, 232, 220), alpha=k3,
+                      tracking=4)
 
 
 class _Fake:
@@ -1663,9 +1927,64 @@ class _Fake:
         self.params = params
 
 
+def biscuit(c, s, b, R):
+    """Primo piano dentro il box: Biscuit nella giacca, occhi spalancati, orecchie giù. Comincia ad abbaiare,
+    la mano di Eli gli chiude il muso piano, e trema zitto. Sotto, tra le assi, le mani che cercano."""
+    t = R.bs
+    G.vgrad(c, -300, -300, 1380, 2300, (40, 30, 26), (16, 12, 12))
+    for k in range(9):                      # assi della parete
+        c.drawLine(-300, 120 + k * 150, 1380, 120 + k * 150, G.P((26, 20, 18), StrokeWidth=5))
+    G.glow(c, 860, 300, 420, (120, 140, 200), 0.18)      # luce fredda di luna dall'alto
+    # le mani sotto le assi (in fondo): si muovono finché c'è rumore, poi rallentano
+    calm = ramp(t, _t(R, b, "hand_at", 99) + 0.4, 1.0)
+    G.rect(c, -300, 1560, 1380, 2300, (58, 44, 34))
+    for k in range(7):
+        gx = 40 + k * 160
+        G.rect(c, gx, 1560, gx + 26, 2300, (8, 8, 10))
+        hy = 1700 + 40 * math.sin(R.t * (7 - 5 * calm) + k * 1.9) * (1 - 0.7 * calm)
+        c.drawRoundRect(skia.Rect(gx - 6, hy, gx + 32, hy + 70), 14, 14, G.P((96, 116, 94), 0.9))
+        for f in range(3):
+            c.drawLine(gx + 2 + f * 11, hy, gx + 2 + f * 11, hy - 26, G.P((96, 116, 94), 0.9, StrokeWidth=8,
+                                                                         StrokeCap=skia.Paint.kRound_Cap))
+    # Biscuit che spunta dal collo della giacca rossa di Eli, in primo piano
+    trem = (3.5 * math.sin(R.t * 41) if t > _t(R, b, "hand_at", 99) else 0.0)
+    body = skia.Path()
+    body.moveTo(-100, 2000)
+    body.lineTo(-100, 1040)
+    body.cubicTo(200, 940, 360, 930, 540, 930)
+    body.cubicTo(720, 930, 880, 940, 1180, 1040)
+    body.lineTo(1180, 2000)
+    body.close()
+    c.drawPath(body, G.P((60, 22, 18), StrokeWidth=14, Style=skia.Paint.kStroke_Style))
+    c.drawPath(body, G.P(JACKET))
+    c.drawLine(540, 1060, 540, 1700, G.P((120, 40, 30), StrokeWidth=8))      # la zip
+    bark = _t(R, b, "bark_at", 99)
+    hand = _t(R, b, "hand_at", 99)
+    state = "scared_bark" if (bark <= t < hand and (R.t * 6) % 1 < 0.6) else "scared"
+    dog_head(c, 470 + trem, 820, s=8.0, facing=1, state=state)
+    G.rrect(c, 300, 960, 780, 1080, 60, (150, 52, 40))                        # il colletto attorno al collo
+    if t >= hand - 0.25:      # la mano di Eli (manica rossa) che chiude il muso, piano
+        k = ramp(t, hand - 0.25, 0.3)
+        hx = 1260 - 560 * k
+        c.drawLine(1400, 1250, hx + 80, 840, G.P((60, 22, 18), StrokeWidth=150, StrokeCap=skia.Paint.kRound_Cap))
+        c.drawLine(1400, 1250, hx + 80, 840, G.P(JACKET, StrokeWidth=130, StrokeCap=skia.Paint.kRound_Cap))
+        c.drawRoundRect(skia.Rect(hx - 60, 760, hx + 140, 920), 70, 70, G.P((44, 36, 32)))
+        c.drawRoundRect(skia.Rect(hx - 52, 768, hx + 132, 912), 64, 64, G.P((233, 224, 205)))
+        for f in range(3):    # le dita sopra il muso
+            c.drawLine(hx - 30 + f * 34, 780, hx - 30 + f * 34, 830, G.P((180, 168, 150), StrokeWidth=5,
+                                                                       StrokeCap=skia.Paint.kRound_Cap))
+    if t > hand:              # tremito: righe di vibrazione attorno alla testa
+        for side in (-1, 1):
+            for j in range(3):
+                x = 470 + side * (190 + j * 24)
+                c.drawLine(x, 700 + j * 22, x + side * 12, 744 + j * 22,
+                           G.P((240, 230, 210), 0.45 * (0.6 + 0.4 * math.sin(R.t * 30 + j)), StrokeWidth=5,
+                               StrokeCap=skia.Paint.kRound_Cap))
+
+
 def black(c, s, b, R):
     G.rect(c, -300, -300, 1380, 2300, (2, 1, 4))
 
 
 SCENES = {"world": world, "bay": bay, "gallery": gallery, "binoc": binoc, "sign": sign, "down": down,
-          "end_map": end_map, "black": black}
+          "end_map": end_map, "black": black, "biscuit": biscuit}
